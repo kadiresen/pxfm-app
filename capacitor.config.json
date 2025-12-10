@@ -2,6 +2,11 @@
   "appId": "com.pxfm.app",
   "appName": "pxfm",
   "webDir": "dist",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true,
+    "allowNavigation": ["*"]
+  },
   "plugins": {
     "SplashScreen": {
       "launchAutoHide": false
