@@ -1,0 +1,35 @@
+{
+  "name": "pxfm",
+  "version": "1.0.0",
+  "description": "tune into the world",
+  "type": "module",
+  "keywords": [
+    "capacitor",
+    "mobile"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@capacitor/core": "latest",
+    "@capacitor/splash-screen": "latest",
+    "framer-motion": "^12.23.25",
+    "hls.js": "^1.6.15",
+    "lucide-react": "^0.556.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "sass": "^1.95.1",
+    "vite": "^5.4.2"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,198 @@
+.player-view-minimal {
+  padding: var(--spacing-lg);
+  padding-top: calc(
+    var(--spacing-xl) + env(safe-area-inset-top)
+  ); /* Extra space for logo */
+
+  /* Rich Radial Gradient (Center Focus) */
+  background: var(--color-bg-base);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+
+  .app-header-logo {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 12px);
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+
+    img {
+      width: 2rem;
+    }
+    z-index: 2; /* Bring above grid */
+  }
+  /* Optional: slight gradient on text if desired, or plain white as requested */
+
+  /* Player row class removed as we reverted to direct flex children */
+
+  .player-bg-glow {
+    position: absolute;
+    top: -50%;
+    left: 0;
+    right: 0;
+    height: 200%;
+    background: radial-gradient(
+        circle at 50% 0%,
+        var(--color-accent-glow),
+        transparent 70%
+      ),
+      radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 100% 100%, 4px 4px; /* Dot grid pattern */
+    z-index: -1;
+    pointer-events: none;
+    /* Fix: Prevent glow from overflowing */
+    width: 100%;
+    max-width: 100vw;
+  }
+} // End .player-view-minimal
+
+@keyframes pixelPulse {
+  0%,
+  45% {
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: none;
+  }
+  50% {
+    background: var(--color-accent);
+    box-shadow: 0 0 10px var(--color-accent);
+  } /* Flash color only */
+  55%,
+  100% {
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: none;
+  }
+}
+
+.station-info-minimal {
+  flex: 1;
+  padding-right: var(--spacing-md);
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+
+  .content-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    position: relative;
+  }
+
+  /* Static container for badge to prevent movement */
+  .text-content-static {
+    height: 16px; /* Reserve space for badge */
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    padding-left: calc(
+      42px + var(--spacing-md)
+    ); /* Align with text (Logo + Gap) */
+  }
+
+  .live-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: #ef4444; /* Red for live */
+    letter-spacing: 1px;
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    &.vis {
+      opacity: 1;
+    }
+  }
+
+  .station-details-anim {
+    display: flex;
+    align-items: flex-end; /* Bottom align logo with text block */
+    gap: var(--spacing-md);
+  }
+
+  .station-logo {
+    width: 42px; /* Slightly smaller to match title level better */
+    height: 42px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--color-bg-surface);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 2px; /* Fine tune alignment */
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .logo-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--color-bg-surface), #333);
+      color: var(--color-text-secondary);
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .text-info {
+    overflow: hidden;
+    padding-bottom: 2px; /* Match logo margin */
+
+    h2 {
+      font-size: var(--font-size-lg); /* Larger title */
+      font-weight: 700;
+      color: var(--color-text-primary);
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 0;
+    }
+
+    p {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+  }
+}
+
+.play-btn-minimal {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(109, 40, 217, 0.4);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+
+  .play-icon-offset {
+    margin-left: 3px;
+  }
+}

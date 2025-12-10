@@ -1,0 +1,10 @@
+{
+  "appId": "com.pxfm.app",
+  "appName": "pxfm",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
+}
