@@ -3,6 +3,7 @@ import { Station } from "../components/StationList/StationList";
 
 // List of potentially reliable base servers
 const BASE_SERVERS = [
+  "https://all.api.radio-browser.info",
   "https://de1.api.radio-browser.info",
   "https://nl1.api.radio-browser.info",
   "https://at1.api.radio-browser.info",

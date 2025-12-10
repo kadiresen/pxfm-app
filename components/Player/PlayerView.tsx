@@ -7,16 +7,24 @@ import "./Player.scss";
 interface Props {
   station: Station;
   isPlaying: boolean;
+  isLoading: boolean;
   onTogglePlay: () => void;
 }
 
-const PlayerView: React.FC<Props> = ({ station, isPlaying, onTogglePlay }) => {
+const PlayerView: React.FC<Props> = ({
+  station,
+  isPlaying,
+  isLoading,
+  onTogglePlay,
+}) => {
   const [imageError, setImageError] = React.useState(false);
 
   // Reset error state when station changes
   React.useEffect(() => {
     setImageError(false);
   }, [station.id]);
+
+  const indicatorState = isLoading ? "buffering" : isPlaying ? "live" : "";
 
   return (
     <div className="player-view-minimal">
@@ -29,7 +37,12 @@ const PlayerView: React.FC<Props> = ({ station, isPlaying, onTogglePlay }) => {
       <div className="station-info-minimal">
         <div className="content-wrapper">
           <div className="text-content-static">
-            <span className={`live-badge ${isPlaying ? "vis" : ""}`}>LIVE</span>
+            <div
+              className={["status-indicator", indicatorState].filter(Boolean).join(" ")}
+            >
+              <span className="status-bar" aria-hidden="true"></span>
+              <span className="status-text">LIVE</span>
+            </div>
           </div>
 
           <motion.div

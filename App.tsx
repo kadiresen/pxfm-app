@@ -34,6 +34,7 @@ const App: React.FC = () => {
       <PlayerView
         station={activeStation}
         isPlaying={isPlaying}
+        isLoading={isLoading}
         onTogglePlay={toggle}
       />
       <StationList

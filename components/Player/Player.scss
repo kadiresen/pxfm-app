@@ -89,33 +89,97 @@
 
   /* Static container for badge to prevent movement */
   .text-content-static {
-    height: 16px; /* Reserve space for badge */
+    // Reserves height for "Live" or "Loading"
+    height: 24px;
+    width: 74px;
+    position: relative;
     margin-bottom: 2px;
-    display: flex;
-    align-items: center;
-    padding-left: calc(
-      42px + var(--spacing-md)
-    ); /* Align with text (Logo + Gap) */
-  }
+    // Align with text (Logo is 42px + gap md)
+    margin-left: calc(42px + var(--spacing-md));
 
-  .live-badge {
-    font-size: 10px;
-    font-weight: 800;
-    color: #ef4444; /* Red for live */
-    letter-spacing: 1px;
-    display: inline-block;
-    background: rgba(239, 68, 68, 0.1);
-    padding: 2px 6px;
-    border-radius: 4px;
-    text-transform: uppercase;
+    .status-indicator {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%) scale(0.95);
+      opacity: 0;
+      width: 48px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      color: white;
+    }
 
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    .status-indicator.buffering,
+    .status-indicator.live {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
 
-    &.vis {
+    .status-indicator.buffering {
+      width: 44px;
+      height: 4px;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .status-indicator.live {
+      width: auto;
+      min-width: 58px;
+      height: 20px;
+      padding: 0 8px;
+      background: rgba(255, 0, 0, 0.95);
+      border-radius: 999px;
+      box-shadow: 0 0 8px rgba(255, 0, 0, 0.35);
+      font-weight: 600;
+    }
+
+    .status-indicator .status-bar {
+      position: absolute;
+      width: 30%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 999px;
+      opacity: 0;
+      animation: loadingBounce 0.6s infinite alternate
+        cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.3s ease;
+    }
+
+    .status-indicator.buffering .status-bar {
       opacity: 1;
     }
+
+    .status-indicator.live .status-bar {
+      opacity: 0;
+    }
+
+    .status-indicator .status-text {
+      position: relative;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: white;
+      text-transform: uppercase;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 1;
+    }
+
+    .status-indicator.live .status-text {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
+
+  /* .live-badge block removed as it's nested now */
 
   .station-details-anim {
     display: flex;
@@ -181,6 +245,15 @@
       line-height: 1.2;
       width: 100%;
     }
+  }
+}
+
+@keyframes loadingBounce {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
 
