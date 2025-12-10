@@ -5,3 +5,15 @@ node_modules/
 .DS_Store
 .sourcemaps
 dist/
+
+# Capacitor / Android
+android/app/build
+android/build
+android/.gradle
+android/local.properties
+android/*.iml
+android/.idea
+android/capacitor-cordova-android-plugins
+ios/App/App/public
+ios/App/Podfile.lock
+ios/App/Pods/

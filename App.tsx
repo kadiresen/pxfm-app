@@ -1,9 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { SplashScreen } from "@capacitor/splash-screen";
 import PlayerView from "./components/Player/PlayerView";
 import StationList, { Station } from "./components/StationList/StationList";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 
 const App: React.FC = () => {
+  // Hide splash screen on mount
+  useEffect(() => {
+    const hideSplashScreen = async () => {
+      try {
+        await SplashScreen.hide();
+      } catch (err) {
+        console.error("Failed to hide splash screen", err);
+      }
+    };
+    hideSplashScreen();
+  }, []);
+
   // Audio Player Hook
   const { isPlaying, isLoading, error, play, toggle } = useAudioPlayer();
 

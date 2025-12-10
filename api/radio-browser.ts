@@ -97,6 +97,7 @@ export const RadioBrowserApi = {
         params: {
           name: query,
           limit: limit.toString(),
+          hidebroken: "true",
         },
       });
 

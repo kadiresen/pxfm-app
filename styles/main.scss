@@ -48,6 +48,27 @@
   padding: 0;
 }
 
+// Core layout
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent body scroll, handle in components */
+  background: var(--color-bg-base);
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background: var(--color-bg-base);
+}
+
 body {
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);

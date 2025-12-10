@@ -88,25 +88,59 @@ export const useAudioPlayer = () => {
       hls.on(Hls.Events.ERROR, (event, data) => {
         if (data.fatal) {
           console.error("HLS Fatal Error:", data);
-          setState((s) => ({ ...s, error: "Stream error", isLoading: false }));
-          // Try to recover
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              hls.recoverMediaError();
-              break;
-            default:
-              hls.destroy();
-              break;
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            console.log(
+              "HLS Network Error (CORS?), falling back to native audio..."
+            );
+            // Hls.js failed (likely CORS or strict browser policies).
+            // Fallback to setting audio.src directly allows Android/iOS native player to take over.
+            // This works like VLC: it bypasses browser CORS and can play the audio track of video streams.
+            hls.destroy();
+            hlsRef.current = null;
+
+            if (audioRef.current) {
+              audioRef.current.src = url;
+              audioRef.current.load();
+              audioRef.current.play().catch((e) => {
+                console.error("Native fallback failed:", e);
+                setState((s) => ({
+                  ...s,
+                  error: "Stream unavailable",
+                  isLoading: false,
+                }));
+              });
+            }
+          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hls.recoverMediaError();
+          } else {
+            hls.destroy();
+            setState((s) => ({
+              ...s,
+              error: "Stream error",
+              isLoading: false,
+            }));
           }
         }
       });
     } else if (audio.canPlayType("application/vnd.apple.mpegurl") || !isHls) {
       // Native HLS support (Safari) or standard audio
       console.log("Using Native/Standard Audio for:", url);
-      audio.src = url;
+
+      // Shoutcast/Icecast compatibility:
+      // Only append ';' if the URL is the root (no path), because that's where the HTML Status Page usually lives.
+      // If there is a deep path (e.g. /stream, /mountpoint, /file.mp3), it's a direct resource that shouldn't be modified.
+      let finalUrl = url;
+      try {
+        const urlObj = new URL(url);
+        // If pathname is just "/" (or empty), it's a root URL like http://host:port/ -> Needs fix
+        if (urlObj.pathname === "/" || urlObj.pathname === "") {
+          finalUrl = url.endsWith("/") ? `${url};` : `${url}/;`;
+        }
+      } catch (e) {
+        // Fallback for invalid URLs: leave as is
+      }
+
+      audio.src = finalUrl;
       audio.load();
       audio.play().catch((e) => console.error("Play failed:", e));
     } else {

@@ -11,6 +11,13 @@ interface Props {
 }
 
 const PlayerView: React.FC<Props> = ({ station, isPlaying, onTogglePlay }) => {
+  const [imageError, setImageError] = React.useState(false);
+
+  // Reset error state when station changes
+  React.useEffect(() => {
+    setImageError(false);
+  }, [station.id]);
+
   return (
     <div className="player-view-minimal">
       <div className="player-bg-glow" />
@@ -32,8 +39,12 @@ const PlayerView: React.FC<Props> = ({ station, isPlaying, onTogglePlay }) => {
             className="station-details-anim"
           >
             <div className="station-logo">
-              {station.image ? (
-                <img src={station.image} alt={station.name} />
+              {station.image && !imageError ? (
+                <img
+                  src={station.image}
+                  alt={station.name}
+                  onError={() => setImageError(true)}
+                />
               ) : (
                 <div className="logo-placeholder">
                   {station.id === "default"

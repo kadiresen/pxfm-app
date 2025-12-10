@@ -149,13 +149,16 @@
       color: var(--color-text-secondary);
       font-weight: 700;
       font-size: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
     }
   }
 
   .text-info {
     overflow: hidden;
     padding-bottom: 2px; /* Match logo margin */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Ensure left alignment */
+    text-align: left;
 
     h2 {
       font-size: var(--font-size-lg); /* Larger title */
@@ -166,6 +169,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       margin-bottom: 0;
+      width: 100%; /* Ensure text takes full width for alignment */
     }
 
     p {
@@ -175,6 +179,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       line-height: 1.2;
+      width: 100%;
     }
   }
 }
