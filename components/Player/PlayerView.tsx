@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause } from "lucide-react";
 import { Station } from "../StationList/StationList";
 import "./Player.scss";
@@ -79,11 +79,41 @@ const PlayerView: React.FC<Props> = ({
         className="play-btn-minimal"
         onClick={onTogglePlay}
       >
-        {isPlaying ? (
-          <Pause size={24} fill="white" />
-        ) : (
-          <Play size={24} fill="white" className="play-icon-offset" />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          {isPlaying ? (
+            <motion.div
+              key="pause"
+              className="icon-wrapper"
+              variants={{
+                initial: { opacity: 0, rotateY: -90, scale: 0.7 },
+                animate: { opacity: 1, rotateY: 0, scale: 1 },
+                exit: { opacity: 0, rotateY: 90, scale: 0.7 },
+              }}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.12, ease: "easeInOut" }}
+            >
+              <Pause size={24} fill="white" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="play"
+              className="icon-wrapper"
+              variants={{
+                initial: { opacity: 0, rotateY: 90, scale: 0.7 },
+                animate: { opacity: 1, rotateY: 0, scale: 1 },
+                exit: { opacity: 0, rotateY: -90, scale: 0.7 },
+              }}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.12, ease: "easeInOut" }}
+            >
+              <Play size={24} fill="white" className="play-icon-offset" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.button>
     </div>
   );
