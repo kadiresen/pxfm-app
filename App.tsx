@@ -41,7 +41,11 @@ const App: React.FC = () => {
         onSelectStation={(station) => {
           setActiveStation(station);
           if (station.streamUrl) {
-            play(station.streamUrl);
+            play(station.streamUrl, {
+              title: station.name,
+              artist: station.genre,
+              artwork: station.image,
+            });
           }
         }}
       />

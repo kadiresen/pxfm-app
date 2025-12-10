@@ -59,98 +59,168 @@ export const useAudioPlayer = () => {
     };
   }, []);
 
-  const play = useCallback(async (url: string) => {
-    if (!audioRef.current || !url) return;
-
-    setState((s) => ({ ...s, isLoading: true, error: null }));
-    const audio = audioRef.current;
-
-    // Cleanup previous HLS instance if exists
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
-    // Logic to determine if we need HLS.js
-    const isHls = url.includes(".m3u8") || url.includes("/hls/");
-
-    if (isHls && Hls.isSupported()) {
-      console.log("Using HLS.js for:", url);
-      const hls = new Hls();
-      hlsRef.current = hls;
-      hls.loadSource(url);
-      hls.attachMedia(audio);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        audio.play().catch((e) => console.error("Play failed:", e));
+  useEffect(() => {
+    // Media Session Action Handlers
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("play", () => {
+        audioRef.current?.play();
       });
-
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        if (data.fatal) {
-          console.error("HLS Fatal Error:", data);
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            console.log(
-              "HLS Network Error (CORS?), falling back to native audio..."
-            );
-            // Hls.js failed (likely CORS or strict browser policies).
-            // Fallback to setting audio.src directly allows Android/iOS native player to take over.
-            // This works like VLC: it bypasses browser CORS and can play the audio track of video streams.
-            hls.destroy();
-            hlsRef.current = null;
-
-            if (audioRef.current) {
-              audioRef.current.src = url;
-              audioRef.current.load();
-              audioRef.current.play().catch((e) => {
-                console.error("Native fallback failed:", e);
-                setState((s) => ({
-                  ...s,
-                  error: "Stream unavailable",
-                  isLoading: false,
-                }));
-              });
-            }
-          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            hls.recoverMediaError();
-          } else {
-            hls.destroy();
-            setState((s) => ({
-              ...s,
-              error: "Stream error",
-              isLoading: false,
-            }));
-          }
-        }
+      navigator.mediaSession.setActionHandler("pause", () => {
+        audioRef.current?.pause();
       });
-    } else if (audio.canPlayType("application/vnd.apple.mpegurl") || !isHls) {
-      // Native HLS support (Safari) or standard audio
-      console.log("Using Native/Standard Audio for:", url);
-
-      // Shoutcast/Icecast compatibility:
-      // Only append ';' if the URL is the root (no path), because that's where the HTML Status Page usually lives.
-      // If there is a deep path (e.g. /stream, /mountpoint, /file.mp3), it's a direct resource that shouldn't be modified.
-      let finalUrl = url;
-      try {
-        const urlObj = new URL(url);
-        // If pathname is just "/" (or empty), it's a root URL like http://host:port/ -> Needs fix
-        if (urlObj.pathname === "/" || urlObj.pathname === "") {
-          finalUrl = url.endsWith("/") ? `${url};` : `${url}/;`;
-        }
-      } catch (e) {
-        // Fallback for invalid URLs: leave as is
-      }
-
-      audio.src = finalUrl;
-      audio.load();
-      audio.play().catch((e) => console.error("Play failed:", e));
-    } else {
-      setState((s) => ({
-        ...s,
-        error: "Format not supported",
-        isLoading: false,
-      }));
+      navigator.mediaSession.setActionHandler("stop", () => {
+        audioRef.current?.pause(); // No native stop, just pause
+      });
     }
   }, []);
+
+  useEffect(() => {
+    // Sync playback state
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = state.isPlaying
+        ? "playing"
+        : "paused";
+    }
+  }, [state.isPlaying]);
+
+  const play = useCallback(
+    async (
+      url: string,
+      metadata?: { title: string; artist: string; artwork: string }
+    ) => {
+      if (!audioRef.current || !url) return;
+
+      // Update Media Session Metadata
+      if ("mediaSession" in navigator && metadata) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: metadata.title,
+          artist: metadata.artist,
+          artwork: [
+            {
+              src: metadata.artwork || "/assets/imgs/logo.png",
+              sizes: "96x96",
+              type: "image/png",
+            },
+            {
+              src: metadata.artwork || "/assets/imgs/logo.png",
+              sizes: "128x128",
+              type: "image/png",
+            },
+            {
+              src: metadata.artwork || "/assets/imgs/logo.png",
+              sizes: "192x192",
+              type: "image/png",
+            },
+            {
+              src: metadata.artwork || "/assets/imgs/logo.png",
+              sizes: "256x256",
+              type: "image/png",
+            },
+            {
+              src: metadata.artwork || "/assets/imgs/logo.png",
+              sizes: "384x384",
+              type: "image/png",
+            },
+            {
+              src: metadata.artwork || "/assets/imgs/logo.png",
+              sizes: "512x512",
+              type: "image/png",
+            },
+          ],
+        });
+      }
+
+      setState((s) => ({ ...s, isLoading: true, error: null }));
+      const audio = audioRef.current;
+
+      // Cleanup previous HLS instance if exists
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+
+      // Logic to determine if we need HLS.js
+      const isHls = url.includes(".m3u8") || url.includes("/hls/");
+
+      if (isHls && Hls.isSupported()) {
+        console.log("Using HLS.js for:", url);
+        const hls = new Hls();
+        hlsRef.current = hls;
+        hls.loadSource(url);
+        hls.attachMedia(audio);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          audio.play().catch((e) => console.error("Play failed:", e));
+        });
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            console.error("HLS Fatal Error:", data);
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              console.log(
+                "HLS Network Error (CORS?), falling back to native audio..."
+              );
+              // Hls.js failed (likely CORS or strict browser policies).
+              // Fallback to setting audio.src directly allows Android/iOS native player to take over.
+              // This works like VLC: it bypasses browser CORS and can play the audio track of video streams.
+              hls.destroy();
+              hlsRef.current = null;
+
+              if (audioRef.current) {
+                audioRef.current.src = url;
+                audioRef.current.load();
+                audioRef.current.play().catch((e) => {
+                  console.error("Native fallback failed:", e);
+                  setState((s) => ({
+                    ...s,
+                    error: "Stream unavailable",
+                    isLoading: false,
+                  }));
+                });
+              }
+            } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              hls.recoverMediaError();
+            } else {
+              hls.destroy();
+              setState((s) => ({
+                ...s,
+                error: "Stream error",
+                isLoading: false,
+              }));
+            }
+          }
+        });
+      } else if (audio.canPlayType("application/vnd.apple.mpegurl") || !isHls) {
+        // Native HLS support (Safari) or standard audio
+        console.log("Using Native/Standard Audio for:", url);
+
+        // Shoutcast/Icecast compatibility:
+        // Only append ';' if the URL is the root (no path), because that's where the HTML Status Page usually lives.
+        // If there is a deep path (e.g. /stream, /mountpoint, /file.mp3), it's a direct resource that shouldn't be modified.
+        let finalUrl = url;
+        try {
+          const urlObj = new URL(url);
+          // If pathname is just "/" (or empty), it's a root URL like http://host:port/ -> Needs fix
+          if (urlObj.pathname === "/" || urlObj.pathname === "") {
+            finalUrl = url.endsWith("/") ? `${url};` : `${url}/;`;
+          }
+        } catch (e) {
+          // Fallback for invalid URLs: leave as is
+        }
+
+        audio.src = finalUrl;
+        audio.load();
+        audio.play().catch((e) => console.error("Play failed:", e));
+      } else {
+        setState((s) => ({
+          ...s,
+          error: "Format not supported",
+          isLoading: false,
+        }));
+      }
+    },
+    []
+  );
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
