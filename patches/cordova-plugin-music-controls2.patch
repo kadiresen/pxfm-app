@@ -1,0 +1,160 @@
+diff --git a/plugin.xml b/plugin.xml
+index f8db368a1f3ddc6ffe75fc4e178363334b461f23..95471a3dd156303155172a4dafdb204436e87fe0 100644
+--- a/plugin.xml
++++ b/plugin.xml
+@@ -32,13 +32,15 @@
+ 			<uses-permission android:name="android.permission.BLUETOOTH"/>
+ 			<uses-permission android:name="android.permission.WAKE_LOCK" />
+ 			<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
++			<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+ 		</config-file>
+ 
+ 		<config-file target="AndroidManifest.xml" parent="/manifest/application">
+ 			<service android:name="com.homerours.musiccontrols.MusicControlsNotificationKiller" android:stopWithTask="true" android:foregroundServiceType="mediaPlayback"></service>
+ 		</config-file>
+ 
+-		<framework src="com.android.support:support-v4:28.0.0" />
++		<framework src="androidx.media:media:1.7.0" />
++                <framework src="androidx.core:core:1.17.0" />
+ 
+ 		<source-file src="src/android/MusicControls.java" target-dir="src/com/homerours/musiccontrols" />
+ 		<source-file src="src/android/MediaSessionCallback.java" target-dir="src/com/homerours/musiccontrols" />
+diff --git a/src/android/MusicControls.java b/src/android/MusicControls.java
+index 22e161a20973039afd671517e3a5d99b6bb8db15..cd3243bef764ba729cbb53585e35fc04fd7c4175 100644
+--- a/src/android/MusicControls.java
++++ b/src/android/MusicControls.java
+@@ -56,21 +56,30 @@ public class MusicControls extends CordovaPlugin {
+ 
+ 	private MediaSessionCallback mMediaSessionCallback = new MediaSessionCallback();
+ 
+-	private void registerBroadcaster(MusicControlsBroadcastReceiver mMessageReceiver){
+-		final Context context = this.cordova.getActivity().getApplicationContext();
+-		context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-previous"));
+-		context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-pause"));
+-		context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-play"));
+-		context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-next"));
+-		context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-media-button"));
+-		context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-destroy"));
+-
+-		// Listen for headset plug/unplug
+-		context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+-		
+-		// Listen for bluetooth connection state changes
+-		context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter(android.bluetooth.BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED));
+-	}
++        private void registerBroadcaster(MusicControlsBroadcastReceiver mMessageReceiver){
++                final Context context = this.cordova.getActivity().getApplicationContext();
++                
++                if (Build.VERSION.SDK_INT >= 34) {
++                        int flags = Context.RECEIVER_NOT_EXPORTED;
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-previous"), flags);
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-pause"), flags);
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-play"), flags);
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-next"), flags);
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-media-button"), flags);
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-destroy"), flags);
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG), flags);
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter(android.bluetooth.BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED), flags);
++                } else {
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-previous"));
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-pause"));
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-play"));
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-next"));
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-media-button"));
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter("music-controls-destroy"));
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
++                        context.registerReceiver((BroadcastReceiver)mMessageReceiver, new IntentFilter(android.bluetooth.BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED));
++                }
++        }
+ 
+ 	// Register pendingIntent for broacast
+ 	public void registerMediaButtonEvent(){
+@@ -293,7 +302,7 @@ public class MusicControls extends CordovaPlugin {
+ 			return myBitmap;
+ 		} catch (Exception ex) {
+ 			try {
+-				InputStream fileStream = cordovaActivity.getAssets().open("www/" + localURL);
++				InputStream fileStream = cordovaActivity.getAssets().open("public/" + localURL);
+ 				BufferedInputStream buf = new BufferedInputStream(fileStream);
+ 				Bitmap myBitmap = BitmapFactory.decodeStream(buf);
+ 				buf.close();
+diff --git a/src/android/MusicControlsNotification.java b/src/android/MusicControlsNotification.java
+index 5551343d57ff036a31e39aba2ce623a12c3812bf..f1f22242057957ebe20c8ac81bd0e0d31b7673cd 100644
+--- a/src/android/MusicControlsNotification.java
++++ b/src/android/MusicControlsNotification.java
+@@ -84,6 +84,7 @@ public class MusicControlsNotification {
+ 
+ 	// Toggle the play/pause button
+ 	public void updateIsPlaying(boolean isPlaying){
++	if (this.infos == null) return;
+ 		this.infos.isPlaying=isPlaying;
+ 		this.createBuilder();
+ 		Notification noti = this.notificationBuilder.build();
+@@ -127,7 +128,7 @@ public class MusicControlsNotification {
+ 			return myBitmap;
+ 		} catch (Exception ex) {
+ 			try {
+-				InputStream fileStream = cordovaActivity.getAssets().open("www/" + localURL);
++				InputStream fileStream = cordovaActivity.getAssets().open("public/" + localURL);
+ 				BufferedInputStream buf = new BufferedInputStream(fileStream);
+ 				Bitmap myBitmap = BitmapFactory.decodeStream(buf);
+ 				buf.close();
+@@ -175,7 +176,7 @@ public class MusicControlsNotification {
+ 		if (infos.dismissable){
+ 			builder.setOngoing(false);
+ 			Intent dismissIntent = new Intent("music-controls-destroy");
+-			PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 1, dismissIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0);
++			PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 1, dismissIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0);
+ 			builder.setDeleteIntent(dismissPendingIntent);
+ 		} else {
+ 			builder.setOngoing(true);
+@@ -218,7 +219,7 @@ public class MusicControlsNotification {
+ 		Intent resultIntent = new Intent(context, cordovaActivity.getClass());
+ 		resultIntent.setAction(Intent.ACTION_MAIN);
+ 		resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+-		PendingIntent resultPendingIntent = PendingIntent.getActivity(context, 0, resultIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0);
++		PendingIntent resultPendingIntent = PendingIntent.getActivity(context, 0, resultIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0);
+ 		builder.setContentIntent(resultPendingIntent);
+ 
+ 		//Controls
+@@ -228,20 +229,20 @@ public class MusicControlsNotification {
+ 			/* Previous  */
+ 			nbControls++;
+ 			Intent previousIntent = new Intent("music-controls-previous");
+-			PendingIntent previousPendingIntent = PendingIntent.getBroadcast(context, 1, previousIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0);
++			PendingIntent previousPendingIntent = PendingIntent.getBroadcast(context, 1, previousIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0);
+ 			builder.addAction(this.getResourceId(infos.prevIcon, android.R.drawable.ic_media_previous), "", previousPendingIntent);
+ 		}
+ 		if (infos.isPlaying){
+ 			/* Pause  */
+ 			nbControls++;
+ 			Intent pauseIntent = new Intent("music-controls-pause");
+-			PendingIntent pausePendingIntent = PendingIntent.getBroadcast(context, 1, pauseIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0);
++			PendingIntent pausePendingIntent = PendingIntent.getBroadcast(context, 1, pauseIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0);
+ 			builder.addAction(this.getResourceId(infos.pauseIcon, android.R.drawable.ic_media_pause), "", pausePendingIntent);
+ 		} else {
+ 			/* Play  */
+ 			nbControls++;
+ 			Intent playIntent = new Intent("music-controls-play");
+-			PendingIntent playPendingIntent = PendingIntent.getBroadcast(context, 1, playIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0);
++			PendingIntent playPendingIntent = PendingIntent.getBroadcast(context, 1, playIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0);
+ 			builder.addAction(this.getResourceId(infos.playIcon, android.R.drawable.ic_media_play), "", playPendingIntent);
+ 		}
+ 
+@@ -249,14 +250,14 @@ public class MusicControlsNotification {
+ 			/* Next */
+ 			nbControls++;
+ 			Intent nextIntent = new Intent("music-controls-next");
+-			PendingIntent nextPendingIntent = PendingIntent.getBroadcast(context, 1, nextIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0);
++			PendingIntent nextPendingIntent = PendingIntent.getBroadcast(context, 1, nextIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0);
+ 			builder.addAction(this.getResourceId(infos.nextIcon, android.R.drawable.ic_media_next), "", nextPendingIntent);
+ 		}
+ 		if (infos.hasClose){
+ 			/* Close */
+ 			nbControls++;
+ 			Intent destroyIntent = new Intent("music-controls-destroy");
+-			PendingIntent destroyPendingIntent = PendingIntent.getBroadcast(context, 1, destroyIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0);
++			PendingIntent destroyPendingIntent = PendingIntent.getBroadcast(context, 1, destroyIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0);
+ 			builder.addAction(this.getResourceId(infos.closeIcon, android.R.drawable.ic_menu_close_clear_cancel), "", destroyPendingIntent);
+ 		}
+ 

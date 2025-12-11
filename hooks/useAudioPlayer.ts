@@ -7,7 +7,21 @@ interface AudioPlayerState {
   error: string | null;
 }
 
-export const useAudioPlayer = () => {
+interface AudioPlayerControls {
+  onNextStation?: () => void;
+  onPreviousStation?: () => void;
+}
+
+declare global {
+  interface Window {
+    MusicControls?: any;
+  }
+}
+
+const getMusicControls = () =>
+  typeof window !== "undefined" ? window.MusicControls : undefined;
+
+export const useAudioPlayer = (controls?: AudioPlayerControls) => {
   const [state, setState] = useState<AudioPlayerState>({
     isPlaying: false,
     isLoading: false,
@@ -17,6 +31,16 @@ export const useAudioPlayer = () => {
   // We keep track of the current audio element and hls instance
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const metadataRef = useRef<{
+    title: string;
+    artist: string;
+    artwork: string;
+  } | null>(null);
+  const musicControlsSubscription = useRef<{ unsubscribe?: () => void } | null>(
+    null
+  );
+  const playingRef = useRef(false);
+  const { onNextStation, onPreviousStation } = controls ?? {};
 
   useEffect(() => {
     // Initialize audio element on mount
@@ -72,7 +96,31 @@ export const useAudioPlayer = () => {
         audioRef.current?.pause(); // No native stop, just pause
       });
     }
+    return () => {
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.setActionHandler("play", null);
+        navigator.mediaSession.setActionHandler("pause", null);
+        navigator.mediaSession.setActionHandler("stop", null);
+      }
+    };
   }, []);
+
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("previoustrack", () => {
+        onPreviousStation?.();
+      });
+      navigator.mediaSession.setActionHandler("nexttrack", () => {
+        onNextStation?.();
+      });
+    }
+    return () => {
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.setActionHandler("previoustrack", null);
+        navigator.mediaSession.setActionHandler("nexttrack", null);
+      }
+    };
+  }, [onNextStation, onPreviousStation]);
 
   useEffect(() => {
     // Sync playback state
@@ -81,7 +129,24 @@ export const useAudioPlayer = () => {
         ? "playing"
         : "paused";
     }
+    const controls = getMusicControls();
+    if (controls) {
+      controls.updateIsPlaying(state.isPlaying);
+    }
+    playingRef.current = state.isPlaying;
   }, [state.isPlaying]);
+
+  useEffect(() => {
+    const controls = getMusicControls();
+    return () => {
+      if (musicControlsSubscription.current) {
+        musicControlsSubscription.current.unsubscribe?.();
+      }
+      if (controls) {
+        controls.destroy();
+      }
+    };
+  }, []);
 
   const play = useCallback(
     async (
@@ -89,6 +154,87 @@ export const useAudioPlayer = () => {
       metadata?: { title: string; artist: string; artwork: string }
     ) => {
       if (!audioRef.current || !url) return;
+
+      const storedMetadata = metadata ?? metadataRef.current;
+      if (storedMetadata) {
+        metadataRef.current = storedMetadata;
+        const controls = getMusicControls();
+        if (controls) {
+          controls.destroy();
+
+          const onSuccess = () => {
+            // controls created
+          };
+          const onError = (e: any) => {
+            console.warn("MusicControls creation failed", e);
+          };
+
+          // Capacitor stores assets in 'public' folder inside 'assets'
+          // Plugin typically looks for 'www' or root.
+          // Try relative path 'public/assets/imgs/logo.png' if plugin prepends nothing
+          // Or just 'assets/imgs/logo.png' if served via http.
+          // But specific error was "www//assets/...".
+          // If we pass 'public/assets/...' it might become 'www/public/assets/...'.
+          // Let's try 'public/assets/imgs/logo.png' first as safe bet for Capacitor 'public' folder structure
+          // BUT wait, looking at the log: java.io.FileNotFoundException: www//assets/imgs/logo.png
+          // It seems the plugin PREPENDS "www/".
+          // In Capacitor, the web assets are in "public/".
+          // So we simply cannot point to it if the plugin hardcodes "www/".
+          // We need to check if the plugin allows "file://" or another prefix?
+          // Or we use a patch to fix the "www/" hardcoding in Java.
+          // Actually, let's look at the Java code I read earlier.
+          // It had "www". I should patch it to "public" for Capacitor!
+
+          controls.create(
+            {
+              track: storedMetadata.title,
+              artist: storedMetadata.artist,
+              cover: storedMetadata.artwork || "assets/imgs/logo.png", // Try without slash, relying on patch I will make
+              isPlaying: state.isPlaying,
+              dismissable: false,
+              hasPrev: Boolean(onPreviousStation),
+              hasNext: Boolean(onNextStation),
+              hasClose: false,
+              ticker: storedMetadata.title,
+            },
+            onSuccess,
+            onError
+          );
+
+          controls.subscribe((action: any) => {
+            try {
+              const message = JSON.parse(action).message;
+              switch (message) {
+                case "music-controls-next":
+                  onNextStation?.();
+                  break;
+                case "music-controls-previous":
+                  onPreviousStation?.();
+                  break;
+                case "music-controls-play":
+                  audioRef.current?.play();
+                  break;
+                case "music-controls-pause":
+                  audioRef.current?.pause();
+                  break;
+                case "music-controls-toggle-play-pause":
+                  if (playingRef.current) {
+                    audioRef.current?.pause();
+                  } else {
+                    audioRef.current?.play();
+                  }
+                  break;
+                default:
+                  break;
+              }
+            } catch (err) {
+              console.warn("MusicControls payload parse failed", err);
+            }
+          });
+
+          controls.listen();
+        }
+      }
 
       // Update Media Session Metadata
       if ("mediaSession" in navigator && metadata) {
@@ -219,7 +365,7 @@ export const useAudioPlayer = () => {
         }));
       }
     },
-    []
+    [onNextStation, onPreviousStation, state.isPlaying]
   );
 
   const pause = useCallback(() => {

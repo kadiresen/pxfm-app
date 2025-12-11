@@ -14,4 +14,11 @@ export default defineConfig({
       ignored: ["**/android/**", "**/ios/**"],
     },
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: "modern-compiler",
+      },
+    },
+  },
 });

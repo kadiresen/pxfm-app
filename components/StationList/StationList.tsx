@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mic2, Search, Loader2 } from "lucide-react";
-import { useRadioBrowser } from "../../hooks/useRadioBrowser";
+import { Search, Loader2 } from "lucide-react";
 import "./StationList.scss";
 
 export interface Station {
@@ -14,11 +13,23 @@ export interface Station {
 
 interface Props {
   activeStationId: string;
+  stations: Station[];
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;
   onSelectStation: (station: Station) => void;
+  search: (query: string) => void;
 }
 
-const StationList: React.FC<Props> = ({ activeStationId, onSelectStation }) => {
-  const { stations, loading, error, search, initialized } = useRadioBrowser();
+const StationList: React.FC<Props> = ({
+  activeStationId,
+  stations,
+  loading,
+  error,
+  initialized,
+  onSelectStation,
+  search,
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Debounce search
@@ -47,6 +58,12 @@ const StationList: React.FC<Props> = ({ activeStationId, onSelectStation }) => {
         {loading && (
           <div className="loading-state">
             <Loader2 size={32} className="animate-spin" />
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="empty-state">
+            <p>{error}</p>
           </div>
         )}
 

@@ -22,6 +22,26 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    packagingOptions {
+        resources {
+            excludes += "META-INF/androidx.cursoradapter_cursoradapter.version"
+            excludes += "META-INF/androidx.drawerlayout_drawerlayout.version"
+            excludes += "META-INF/androidx.versionedparcelable_versionedparcelable.version"
+            excludes += "META-INF/androidx.interpolator_interpolator.version"
+            excludes += "META-INF/androidx.fragment_fragment.version"
+            excludes += "META-INF/androidx.customview_customview.version"
+            excludes += "META-INF/androidx.loader_loader.version"
+            excludes += "META-INF/androidx.viewpager_viewpager.version"
+            excludes += "META-INF/androidx.core_core.version"
+            excludes += "META-INF/androidx.coordinatorlayout_coordinatorlayout.version"
+        }
+    }
 }
 
 repositories {
@@ -30,11 +50,25 @@ repositories {
     }
 }
 
+configurations.all {
+    exclude group: "com.android.support", module: "support-compat"
+    exclude group: "com.android.support", module: "versionedparcelable"
+    exclude group: "com.android.support", module: "cursoradapter"
+    exclude group: "com.android.support", module: "drawerlayout"
+    exclude group: "com.android.support", module: "fragment"
+    exclude group: "com.android.support", module: "customview"
+    exclude group: "com.android.support", module: "interpolator"
+    exclude group: "com.android.support", module: "loader"
+    exclude group: "com.android.support", module: "viewpager"
+    exclude group: "com.android.support", module: "coordinatorlayout"
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation "androidx.media:media:1.7.0"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

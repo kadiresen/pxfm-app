@@ -4,15 +4,20 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  cordova-plugin-music-controls2:
+    hash: 3b74a65d87a34deabcb9db1a98452dde759e14c2717e90d62fbd1f8318c49c22
+    path: patches/cordova-plugin-music-controls2.patch
+
 importers:
 
   .:
     dependencies:
       '@capacitor/android':
-        specifier: ^8.0.0
+        specifier: latest
         version: 8.0.0(@capacitor/core@8.0.0)
       '@capacitor/assets':
-        specifier: ^3.0.5
+        specifier: latest
         version: 3.0.5(@types/node@25.0.0)(typescript@5.9.3)
       '@capacitor/core':
         specifier: latest
@@ -23,6 +28,9 @@ importers:
       '@emotion/is-prop-valid':
         specifier: ^1.4.0
         version: 1.4.0
+      cordova-plugin-music-controls2:
+        specifier: ^3.0.7
+        version: 3.0.7(patch_hash=3b74a65d87a34deabcb9db1a98452dde759e14c2717e90d62fbd1f8318c49c22)
       framer-motion:
         specifier: ^12.23.25
         version: 12.23.26(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -1132,6 +1140,10 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  cordova-plugin-music-controls2@3.0.7:
+    resolution: {integrity: sha512-XnbMwcVv1lZSdV78DQqxTJ22/290G+Ks0kn36NJrLT6GF6+5L11L3pf2Hey+e8LoqObPcXy4uTANc+ToADanlg==}
+    engines: {'0': {name: cordova, version: '>=6.0.0'}}
 
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
@@ -2607,7 +2619,7 @@ snapshots:
       '@ionic/utils-subprocess': 2.1.14
       '@ionic/utils-terminal': 2.3.5
       commander: 9.5.0
-      debug: 4.3.4
+      debug: 4.4.3
       env-paths: 2.2.1
       kleur: 4.1.5
       native-run: 2.0.1
@@ -2617,7 +2629,7 @@ snapshots:
       rimraf: 4.4.1
       semver: 7.7.3
       tar: 6.2.1
-      tslib: 2.6.2
+      tslib: 2.8.1
       xml2js: 0.5.0
     transitivePeerDependencies:
       - supports-color
@@ -2845,16 +2857,16 @@ snapshots:
   '@ionic/utils-array@2.1.6':
     dependencies:
       debug: 4.3.4
-      tslib: 2.6.2
+      tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
   '@ionic/utils-fs@3.1.7':
     dependencies:
       '@types/fs-extra': 8.1.5
-      debug: 4.3.4
+      debug: 4.4.3
       fs-extra: 9.1.0
-      tslib: 2.6.2
+      tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
@@ -2869,10 +2881,10 @@ snapshots:
     dependencies:
       '@ionic/utils-object': 2.1.6
       '@ionic/utils-terminal': 2.3.4
-      debug: 4.3.4
+      debug: 4.4.3
       signal-exit: 3.0.7
       tree-kill: 1.2.2
-      tslib: 2.6.2
+      tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
@@ -2889,8 +2901,8 @@ snapshots:
 
   '@ionic/utils-stream@3.1.6':
     dependencies:
-      debug: 4.3.4
-      tslib: 2.6.2
+      debug: 4.4.3
+      tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
@@ -2909,8 +2921,8 @@ snapshots:
       '@ionic/utils-stream': 3.1.6
       '@ionic/utils-terminal': 2.3.4
       cross-spawn: 7.0.6
-      debug: 4.3.4
-      tslib: 2.6.2
+      debug: 4.4.3
+      tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
@@ -2930,12 +2942,12 @@ snapshots:
   '@ionic/utils-terminal@2.3.4':
     dependencies:
       '@types/slice-ansi': 4.0.0
-      debug: 4.3.4
+      debug: 4.4.3
       signal-exit: 3.0.7
       slice-ansi: 4.0.0
       string-width: 4.2.3
       strip-ansi: 6.0.1
-      tslib: 2.6.2
+      tslib: 2.8.1
       untildify: 4.0.0
       wrap-ansi: 7.0.0
     transitivePeerDependencies:
@@ -3566,6 +3578,8 @@ snapshots:
       through2: 4.0.2
 
   convert-source-map@2.0.0: {}
+
+  cordova-plugin-music-controls2@3.0.7(patch_hash=3b74a65d87a34deabcb9db1a98452dde759e14c2717e90d62fbd1f8318c49c22): {}
 
   core-util-is@1.0.3: {}
 
