@@ -1,6 +1,6 @@
 {
   "name": "pxfm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "tune into the world",
   "type": "module",
   "keywords": [
@@ -11,13 +11,15 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "version:sync": "node scripts/sync-version.cjs"
   },
   "dependencies": {
     "@capacitor/android": "latest",
     "@capacitor/assets": "latest",
     "@capacitor/core": "latest",
     "@capacitor/splash-screen": "latest",
+    "@capacitor/status-bar": "^8.0.0",
     "@emotion/is-prop-valid": "^1.4.0",
     "cordova-plugin-music-controls2": "^3.0.7",
     "framer-motion": "^12.23.25",

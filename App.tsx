@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { SplashScreen } from "@capacitor/splash-screen";
+import { StatusBar, Style } from "@capacitor/status-bar";
 import PlayerView from "./components/Player/PlayerView";
 import StationList, { Station } from "./components/StationList/StationList";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
@@ -8,19 +9,21 @@ import { useRadioBrowser } from "./hooks/useRadioBrowser";
 const App: React.FC = () => {
   // Hide splash screen on mount
   useEffect(() => {
-    const hideSplashScreen = async () => {
+    const initApp = async () => {
       try {
+        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setBackgroundColor({ color: "#0a0a0a" });
         await SplashScreen.hide();
       } catch (err) {
-        console.error("Failed to hide splash screen", err);
+        console.error("Failed to initialize app", err);
       }
     };
-    hideSplashScreen();
+    initApp();
   }, []);
 
   const { stations, loading, error, search, initialized } = useRadioBrowser();
-  const nextStationRef = useRef<() => void>();
-  const previousStationRef = useRef<() => void>();
+  const nextStationRef = useRef<(() => void) | undefined>(undefined);
+  const previousStationRef = useRef<(() => void) | undefined>(undefined);
 
   const {
     isPlaying,
@@ -56,14 +59,14 @@ const App: React.FC = () => {
         });
       }
     },
-    [play]
+    [play],
   );
 
   const moveStation = useCallback(
     (direction: "next" | "prev") => {
       if (!stations.length) return;
       const currentIndex = stations.findIndex(
-        (station) => station.id === activeStation.id
+        (station) => station.id === activeStation.id,
       );
       if (currentIndex === -1) return;
 
@@ -78,16 +81,16 @@ const App: React.FC = () => {
         }
       }
     },
-    [activeStation.id, playStation, stations]
+    [activeStation.id, playStation, stations],
   );
 
   const handleNextStation = useCallback(
     () => moveStation("next"),
-    [moveStation]
+    [moveStation],
   );
   const handlePreviousStation = useCallback(
     () => moveStation("prev"),
-    [moveStation]
+    [moveStation],
   );
 
   useEffect(() => {
