@@ -1,0 +1,14 @@
+<en-US>
+What's New:
+*   **Favorites:** Save your favorite stations for quick access! Tap the heart icon to add stations to your personal list.
+*   **New Design:** Enjoy a sleek, modern tab interface with smooth animations for seamless navigation.
+*   **Performance Improvements:** Faster loading times and smoother transitions between "All Stations" and "Favorites".
+*   **Bug Fixes:** Enhanced app stability and resolved minor UI issues.
+</en-US>
+<tr-TR>
+Yenilikler:
+*   **Favoriler:** Favori istasyonlarınızı kaydedin! İstasyonları listenize eklemek için kalp ikonuna dokunmanız yeterli.
+*   **Yeni Tasarım:** Şık, modern sekme arayüzü ve akıcı animasyonlarla daha keyifli bir deneyim.
+*   **Performans İyileştirmeleri:** Daha hızlı yükleme süreleri ve sekmeler arası geçişlerde takılmayan bir akış.
+*   **Hata Düzeltmeleri:** Uygulama kararlılığı artırıldı ve küçük arayüz sorunları giderildi.
+</tr-TR>
