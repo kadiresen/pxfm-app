@@ -1,13 +1,31 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import PlayerView from "./components/Player/PlayerView";
 import StationList, { Station } from "./components/StationList/StationList";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { useRadioBrowser } from "./hooks/useRadioBrowser";
-import { useFavorites } from "./hooks/useFavorites"; // Import useFavorites
+import { useFavorites } from "./hooks/useFavorites";
 
 type DisplayMode = "all" | "favorites";
+
+const variants: Variants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 300 : -300,
+    opacity: 0,
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    zIndex: 0,
+    x: direction < 0 ? 300 : -300,
+    opacity: 0,
+  }),
+};
 
 const App: React.FC = () => {
   // Hide splash screen on mount
@@ -25,7 +43,7 @@ const App: React.FC = () => {
   }, []);
 
   const { stations, loading, error, search, initialized } = useRadioBrowser();
-  const { favoriteStations } = useFavorites(); // Use the favorites hook
+  const { favoriteStations } = useFavorites();
 
   const nextStationRef = useRef<(() => void) | undefined>(undefined);
   const previousStationRef = useRef<(() => void) | undefined>(undefined);
@@ -48,16 +66,31 @@ const App: React.FC = () => {
     image: "",
     streamUrl: "",
   });
-  const [displayMode, setDisplayMode] = useState<DisplayMode>("favorites"); // Default to favorites
+
+  // [currentMode, direction]
+  // Favorites = index 0, All = index 1
+  const [displayModeState, setDisplayModeState] = useState<[DisplayMode, number]>([
+    "favorites",
+    0,
+  ]);
+  const [displayMode, direction] = displayModeState;
+
+  const setDisplayMode = (newMode: DisplayMode) => {
+    if (newMode === displayMode) return;
+    const newIndex = newMode === "favorites" ? 0 : 1;
+    const currentIndex = displayMode === "favorites" ? 0 : 1;
+    const newDirection = newIndex > currentIndex ? 1 : -1;
+    setDisplayModeState([newMode, newDirection]);
+  };
 
   const [currentSearchTerm, setCurrentSearchTerm] = useState("");
 
   useEffect(() => {
-    // Initial search for all stations or handle empty search for favorites
-    if (displayMode === "all") {
+    // Only fetch initial stations if we haven't already and we are in 'all' mode
+    if (displayMode === "all" && !initialized) {
       search("");
     }
-  }, [displayMode, search]);
+  }, [displayMode, search, initialized]);
 
   const playStation = useCallback(
     (station: Station) => {
@@ -73,7 +106,6 @@ const App: React.FC = () => {
     [play],
   );
 
-  // Determine which list of stations to display based on displayMode
   const displayedStations = useMemo(() => {
     let stationsToDisplay =
       displayMode === "favorites" ? favoriteStations : stations;
@@ -96,9 +128,8 @@ const App: React.FC = () => {
     (query: string) => {
       setCurrentSearchTerm(query);
       if (displayMode === "all") {
-        search(query); // Still use the RadioBrowser API for 'all' mode
+        search(query);
       }
-      // For 'favorites' mode, filtering happens in displayedStations memo
     },
     [displayMode, search],
   );
@@ -154,24 +185,87 @@ const App: React.FC = () => {
             onClick={() => setDisplayMode("favorites")}
           >
             Favorites
+            {displayMode === "favorites" && (
+              <motion.div
+                className="active-tab-indicator"
+                layoutId="activeTab"
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: "2px",
+                  background: "var(--color-accent)",
+                }}
+              />
+            )}
           </button>
           <button
             className={displayMode === "all" ? "active" : ""}
             onClick={() => setDisplayMode("all")}
           >
             All Stations
+            {displayMode === "all" && (
+              <motion.div
+                className="active-tab-indicator"
+                layoutId="activeTab"
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: "2px",
+                  background: "var(--color-accent)",
+                }}
+              />
+            )}
           </button>
         </div>
       </div>
-      <StationList
-        activeStationId={activeStation.id}
-        stations={displayedStations}
-        loading={displayMode === "all" ? loading : false} // Only show loading for 'all' mode API calls
-        error={error || playerError}
-        initialized={initialized}
-        onSelectStation={playStation}
-        search={handleSearch} // Pass the new handleSearch
-      />
+
+      <div
+        style={{
+          flex: 1,
+          position: "relative",
+          overflow: "hidden",
+          width: "100%", /* Ensure full width */
+        }}
+      >
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={displayMode}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 300, damping: 30 },
+              opacity: { duration: 0.2 },
+            }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "var(--color-bg-base)", /* Ensure background covers the other slide */
+            }}
+          >
+            <StationList
+              activeStationId={activeStation.id}
+              stations={displayedStations}
+              loading={displayMode === "all" ? loading : false}
+              error={error || playerError}
+              initialized={displayMode === "favorites" ? true : initialized}
+              onSelectStation={playStation}
+              search={handleSearch}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
