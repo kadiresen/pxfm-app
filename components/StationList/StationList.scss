@@ -144,6 +144,23 @@
       margin-bottom: 0;
     }
   }
+
+  .favorite-button {
+    margin-left: auto; /* Pushes it to the right */
+    cursor: pointer;
+    color: var(--color-text-secondary); /* Default color for outline heart */
+    transition: color 0.2s ease;
+    padding: 5px; /* Increase clickable area */
+    border-radius: var(--radius-sm);
+
+    &:hover {
+      color: var(--color-accent); /* Highlight on hover */
+    }
+
+    svg {
+      display: block; /* Ensure SVG is block level for consistent sizing */
+    }
+  }
 }
 
 .playing-indicator {

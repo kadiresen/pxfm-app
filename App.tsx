@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import PlayerView from "./components/Player/PlayerView";
 import StationList, { Station } from "./components/StationList/StationList";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { useRadioBrowser } from "./hooks/useRadioBrowser";
+import { useFavorites } from "./hooks/useFavorites"; // Import useFavorites
+
+type DisplayMode = "all" | "favorites";
 
 const App: React.FC = () => {
   // Hide splash screen on mount
@@ -22,6 +25,8 @@ const App: React.FC = () => {
   }, []);
 
   const { stations, loading, error, search, initialized } = useRadioBrowser();
+  const { favoriteStations } = useFavorites(); // Use the favorites hook
+
   const nextStationRef = useRef<(() => void) | undefined>(undefined);
   const previousStationRef = useRef<(() => void) | undefined>(undefined);
 
@@ -43,10 +48,16 @@ const App: React.FC = () => {
     image: "",
     streamUrl: "",
   });
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("favorites"); // Default to favorites
+
+  const [currentSearchTerm, setCurrentSearchTerm] = useState("");
 
   useEffect(() => {
-    search("");
-  }, [search]);
+    // Initial search for all stations or handle empty search for favorites
+    if (displayMode === "all") {
+      search("");
+    }
+  }, [displayMode, search]);
 
   const playStation = useCallback(
     (station: Station) => {
@@ -62,26 +73,56 @@ const App: React.FC = () => {
     [play],
   );
 
+  // Determine which list of stations to display based on displayMode
+  const displayedStations = useMemo(() => {
+    let stationsToDisplay =
+      displayMode === "favorites" ? favoriteStations : stations;
+
+    if (currentSearchTerm) {
+      stationsToDisplay = stationsToDisplay.filter(
+        (station) =>
+          station.name
+            .toLowerCase()
+            .includes(currentSearchTerm.toLowerCase()) ||
+          station.genre
+            ?.toLowerCase()
+            .includes(currentSearchTerm.toLowerCase()),
+      );
+    }
+    return stationsToDisplay;
+  }, [displayMode, favoriteStations, stations, currentSearchTerm]);
+
+  const handleSearch = useCallback(
+    (query: string) => {
+      setCurrentSearchTerm(query);
+      if (displayMode === "all") {
+        search(query); // Still use the RadioBrowser API for 'all' mode
+      }
+      // For 'favorites' mode, filtering happens in displayedStations memo
+    },
+    [displayMode, search],
+  );
+
   const moveStation = useCallback(
     (direction: "next" | "prev") => {
-      if (!stations.length) return;
-      const currentIndex = stations.findIndex(
+      if (!displayedStations.length) return;
+      const currentIndex = displayedStations.findIndex(
         (station) => station.id === activeStation.id,
       );
       if (currentIndex === -1) return;
 
       const step = direction === "next" ? 1 : -1;
       let cursor = currentIndex;
-      for (let i = 0; i < stations.length; i += 1) {
-        cursor = (cursor + step + stations.length) % stations.length;
-        const candidate = stations[cursor];
+      for (let i = 0; i < displayedStations.length; i += 1) {
+        cursor = (cursor + step + displayedStations.length) % displayedStations.length;
+        const candidate = displayedStations[cursor];
         if (candidate?.streamUrl) {
           playStation(candidate);
           return;
         }
       }
     },
-    [activeStation.id, playStation, stations],
+    [activeStation.id, playStation, displayedStations],
   );
 
   const handleNextStation = useCallback(
@@ -106,14 +147,30 @@ const App: React.FC = () => {
         isLoading={isLoading}
         onTogglePlay={toggle}
       />
+      <div className="station-mode-selector">
+        <div className="mode-toggle-pill">
+          <button
+            className={displayMode === "favorites" ? "active" : ""}
+            onClick={() => setDisplayMode("favorites")}
+          >
+            Favorites
+          </button>
+          <button
+            className={displayMode === "all" ? "active" : ""}
+            onClick={() => setDisplayMode("all")}
+          >
+            All Stations
+          </button>
+        </div>
+      </div>
       <StationList
         activeStationId={activeStation.id}
-        stations={stations}
-        loading={loading}
+        stations={displayedStations}
+        loading={displayMode === "all" ? loading : false} // Only show loading for 'all' mode API calls
         error={error || playerError}
         initialized={initialized}
         onSelectStation={playStation}
-        search={search}
+        search={handleSearch} // Pass the new handleSearch
       />
     </div>
   );

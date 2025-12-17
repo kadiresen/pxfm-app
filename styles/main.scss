@@ -102,6 +102,53 @@ button {
   color: inherit;
 }
 
+.station-mode-selector {
+  display: flex;
+  justify-content: center;
+  background: var(--color-bg-base);
+  border-bottom: 1px solid var(--color-border);
+  position: relative; /* For the potential sliding indicator if we wanted, but CSS border is simpler */
+
+  .mode-toggle-pill {
+    /* Renaming/Refactoring this wrapper to just be a flex container for tabs */
+    display: flex;
+    width: 100%;
+    max-width: 400px; /* Slightly wider for comfortable tabs */
+    justify-content: space-around; /* Distribute tabs evenly */
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+
+    button {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 0;
+      background: transparent;
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: color 0.3s ease;
+      position: relative;
+      border-bottom: 2px solid transparent;
+
+      &:hover:not(.active) {
+        color: var(--color-text-primary);
+        background: transparent;
+      }
+
+      &.active {
+        color: var(--color-accent);
+        background: transparent;
+        box-shadow: none;
+        border-bottom-color: var(--color-accent);
+      }
+    }
+  }
+}
+
 /* Scrollbar styling for Lists */
 ::-webkit-scrollbar {
   width: 6px;

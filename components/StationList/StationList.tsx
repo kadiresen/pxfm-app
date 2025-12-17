@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Heart } from "lucide-react";
 import "./StationList.scss";
+import { useFavorites } from "../../hooks/useFavorites";
 
 export interface Station {
   id: string;
@@ -31,6 +32,7 @@ const StationList: React.FC<Props> = ({
   search,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
 
   // Debounce search
   useEffect(() => {
@@ -39,6 +41,18 @@ const StationList: React.FC<Props> = ({
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm, search]);
+
+  const handleToggleFavorite = (
+    event: React.MouseEvent,
+    station: Station,
+  ) => {
+    event.stopPropagation(); // Prevent onSelectStation from being called
+    if (isFavorite(station.id)) {
+      removeFavorite(station.id);
+    } else {
+      addFavorite(station);
+    }
+  };
 
   return (
     <div className="station-list-embedded">
@@ -76,6 +90,7 @@ const StationList: React.FC<Props> = ({
         {!loading &&
           stations.map((station, index) => {
             const isActive = station.id === activeStationId;
+            const isFav = isFavorite(station.id);
             return (
               <motion.div
                 key={station.id}
@@ -107,6 +122,12 @@ const StationList: React.FC<Props> = ({
                 <div className="station-info-row">
                   <h4>{station.name}</h4>
                   <p>{station.genre}</p>
+                </div>
+                <div
+                  className="favorite-button"
+                  onClick={(e) => handleToggleFavorite(e, station)}
+                >
+                  <Heart size={20} fill={isFav ? "#e00" : "none"} />
                 </div>
                 {isActive && (
                   <div className="playing-indicator">
