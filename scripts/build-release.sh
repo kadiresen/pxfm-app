@@ -6,15 +6,19 @@ cd "$(dirname "$0")/.."
 
 echo "🚀 Starting Release Build Process..."
 
-# 1. Build Web Assets
+# 1. Sync Version
+echo "📦 Syncing version..."
+node scripts/sync-version.cjs
+
+# 2. Build Web Assets
 echo "📦 Building web assets..."
 pnpm build
 
-# 2. Sync with Capacitor
+# 3. Sync with Capacitor
 echo "🔄 Syncing Capacitor..."
 npx cap sync android
 
-# 3. Build Android Bundle
+# 4. Build Android Bundle
 echo "🤖 Building Android App Bundle..."
 cd android
 
