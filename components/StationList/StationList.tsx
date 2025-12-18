@@ -42,10 +42,7 @@ const StationList: React.FC<Props> = ({
     return () => clearTimeout(timer);
   }, [searchTerm, search]);
 
-  const handleToggleFavorite = (
-    event: React.MouseEvent,
-    station: Station,
-  ) => {
+  const handleToggleFavorite = (event: React.MouseEvent, station: Station) => {
     event.stopPropagation(); // Prevent onSelectStation from being called
     if (isFavorite(station.id)) {
       removeFavorite(station.id);
@@ -129,13 +126,6 @@ const StationList: React.FC<Props> = ({
                 >
                   <Heart size={20} fill={isFav ? "#e00" : "none"} />
                 </div>
-                {isActive && (
-                  <div className="playing-indicator">
-                    <div className="bar bar-1"></div>
-                    <div className="bar bar-2"></div>
-                    <div className="bar bar-3"></div>
-                  </div>
-                )}
               </motion.div>
             );
           })}
