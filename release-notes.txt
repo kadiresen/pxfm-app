@@ -1,14 +1,10 @@
 <en-US>
-What's New:
-*   **Favorites:** Save your favorite stations for quick access! Tap the heart icon to add stations to your personal list.
-*   **New Design:** Enjoy a sleek, modern tab interface with smooth animations for seamless navigation.
-*   **Performance Improvements:** Faster loading times and smoother transitions between "All Stations" and "Favorites".
-*   **Bug Fixes:** Enhanced app stability and resolved minor UI issues.
+- Android Auto Support: Now you can listen to your favorite stations directly from your car's dashboard.
+- UI Refinements: Removed animated bars for a cleaner station list view.
+- Bug Fixes: General performance improvements and stability fixes.
 </en-US>
 <tr-TR>
-Yenilikler:
-*   **Favoriler:** Favori istasyonlarınızı kaydedin! İstasyonları listenize eklemek için kalp ikonuna dokunmanız yeterli.
-*   **Yeni Tasarım:** Şık, modern sekme arayüzü ve akıcı animasyonlarla daha keyifli bir deneyim.
-*   **Performans İyileştirmeleri:** Daha hızlı yükleme süreleri ve sekmeler arası geçişlerde takılmayan bir akış.
-*   **Hata Düzeltmeleri:** Uygulama kararlılığı artırıldı ve küçük arayüz sorunları giderildi.
+- Android Auto Desteği: Artık favori istasyonlarınızı aracınızın ekranından doğrudan dinleyebilirsiniz.
+- Arayüz İyileştirmeleri: Daha sade bir görünüm için istasyon listesindeki animasyonlu çubuklar kaldırıldı.
+- Hata Düzeltmeleri: Genel performans iyileştirmeleri ve kararlılık düzeltmeleri.
 </tr-TR>
