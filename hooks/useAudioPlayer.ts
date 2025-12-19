@@ -206,22 +206,39 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
               const message = JSON.parse(action).message;
               switch (message) {
                 case "music-controls-next":
+                case "music-controls-media-button-next":
                   onNextStation?.();
                   break;
                 case "music-controls-previous":
+                case "music-controls-media-button-previous":
                   onPreviousStation?.();
                   break;
                 case "music-controls-play":
+                case "music-controls-media-button-play":
                   audioRef.current?.play();
+                  setState((s) => ({ ...s, isPlaying: true, isLoading: false }));
                   break;
                 case "music-controls-pause":
+                case "music-controls-media-button-pause":
                   audioRef.current?.pause();
+                  setState((s) => ({ ...s, isPlaying: false, isLoading: false }));
                   break;
                 case "music-controls-toggle-play-pause":
+                case "music-controls-media-button-play-pause":
                   if (playingRef.current) {
                     audioRef.current?.pause();
+                    setState((s) => ({
+                      ...s,
+                      isPlaying: false,
+                      isLoading: false,
+                    }));
                   } else {
                     audioRef.current?.play();
+                    setState((s) => ({
+                      ...s,
+                      isPlaying: true,
+                      isLoading: false,
+                    }));
                   }
                   break;
                 default:

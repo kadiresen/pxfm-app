@@ -47,6 +47,7 @@ const App: React.FC = () => {
 
   const nextStationRef = useRef<(() => void) | undefined>(undefined);
   const previousStationRef = useRef<(() => void) | undefined>(undefined);
+  const stationQueueRef = useRef<Station[]>([]);
 
   const {
     isPlaying,
@@ -93,7 +94,13 @@ const App: React.FC = () => {
   }, [displayMode, search, initialized]);
 
   const playStation = useCallback(
-    (station: Station) => {
+    (
+      station: Station,
+      options?: { updateQueue?: boolean; queue?: Station[] },
+    ) => {
+      if (options?.updateQueue) {
+        stationQueueRef.current = options.queue ?? [];
+      }
       setActiveStation(station);
       if (station.streamUrl) {
         play(station.streamUrl, {
@@ -136,24 +143,37 @@ const App: React.FC = () => {
 
   const moveStation = useCallback(
     (direction: "next" | "prev") => {
-      if (!displayedStations.length) return;
-      const currentIndex = displayedStations.findIndex(
-        (station) => station.id === activeStation.id,
-      );
+      const queueFromRef = stationQueueRef.current;
+      const activeId = activeStation.id;
+
+      let stationQueue = queueFromRef;
+      if (!stationQueue.length || !stationQueue.some((s) => s.id === activeId)) {
+        if (displayedStations.some((s) => s.id === activeId)) {
+          stationQueue = displayedStations;
+        } else if (favoriteStations.some((s) => s.id === activeId)) {
+          stationQueue = favoriteStations;
+        } else if (stations.some((s) => s.id === activeId)) {
+          stationQueue = stations;
+        } else {
+          return;
+        }
+      }
+
+      const currentIndex = stationQueue.findIndex((s) => s.id === activeId);
       if (currentIndex === -1) return;
 
       const step = direction === "next" ? 1 : -1;
       let cursor = currentIndex;
-      for (let i = 0; i < displayedStations.length; i += 1) {
-        cursor = (cursor + step + displayedStations.length) % displayedStations.length;
-        const candidate = displayedStations[cursor];
+      for (let i = 0; i < stationQueue.length; i += 1) {
+        cursor = (cursor + step + stationQueue.length) % stationQueue.length;
+        const candidate = stationQueue[cursor];
         if (candidate?.streamUrl) {
           playStation(candidate);
           return;
         }
       }
     },
-    [activeStation.id, playStation, displayedStations],
+    [activeStation.id, displayedStations, favoriteStations, playStation, stations],
   );
 
   const handleNextStation = useCallback(
@@ -169,6 +189,13 @@ const App: React.FC = () => {
     nextStationRef.current = handleNextStation;
     previousStationRef.current = handlePreviousStation;
   }, [handleNextStation, handlePreviousStation]);
+
+  const handleSelectStation = useCallback(
+    (station: Station) => {
+      playStation(station, { updateQueue: true, queue: displayedStations });
+    },
+    [displayedStations, playStation],
+  );
 
   return (
     <div className="app-container">
@@ -260,7 +287,7 @@ const App: React.FC = () => {
               loading={displayMode === "all" ? loading : false}
               error={error || playerError}
               initialized={displayMode === "favorites" ? true : initialized}
-              onSelectStation={playStation}
+              onSelectStation={handleSelectStation}
               search={handleSearch}
             />
           </motion.div>
