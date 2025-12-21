@@ -45,9 +45,6 @@
       "sharp",
       "@parcel/watcher",
       "esbuild"
-    ],
-    "patchedDependencies": {
-      "cordova-plugin-music-controls2": "patches/cordova-plugin-music-controls2.patch"
-    }
+    ]
   }
 }

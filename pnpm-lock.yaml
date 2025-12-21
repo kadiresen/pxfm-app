@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  cordova-plugin-music-controls2:
-    hash: 3b74a65d87a34deabcb9db1a98452dde759e14c2717e90d62fbd1f8318c49c22
-    path: patches/cordova-plugin-music-controls2.patch
-
 importers:
 
   .:
@@ -33,7 +28,7 @@ importers:
         version: 1.4.0
       cordova-plugin-music-controls2:
         specifier: ^3.0.7
-        version: 3.0.7(patch_hash=3b74a65d87a34deabcb9db1a98452dde759e14c2717e90d62fbd1f8318c49c22)
+        version: 3.0.7
       framer-motion:
         specifier: ^12.23.25
         version: 12.23.26(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -3591,7 +3586,7 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  cordova-plugin-music-controls2@3.0.7(patch_hash=3b74a65d87a34deabcb9db1a98452dde759e14c2717e90d62fbd1f8318c49c22): {}
+  cordova-plugin-music-controls2@3.0.7: {}
 
   core-util-is@1.0.3: {}
 
