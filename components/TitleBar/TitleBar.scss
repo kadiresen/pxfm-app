@@ -1,0 +1,49 @@
+.titlebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 38px;
+  background: transparent;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  user-select: none;
+  z-index: 9999; /* Ensure it is on top of everything */
+  
+  &[data-tauri-drag-region] {
+    cursor: default;
+  }
+
+  .titlebar-controls {
+    display: flex;
+    height: 100%;
+    padding-right: 8px; /* Slight padding from right edge */
+
+    .titlebar-button {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 32px;
+      height: 32px;
+      margin-top: 3px; /* Center vertically roughly */
+      border-radius: 50%; /* Circle for minimal look */
+      color: var(--color-text-secondary);
+      opacity: 0.5;
+      transition: opacity 0.2s, background 0.2s, color 0.2s;
+      cursor: pointer;
+      
+      /* Only icon, minimal hover */
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--color-text-primary);
+        opacity: 1;
+      }
+
+      &.close:hover {
+        background: rgba(239, 68, 68, 0.2); /* Very subtle red tint */
+        color: #ef4444;
+      }
+    }
+  }
+}

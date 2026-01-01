@@ -1,13 +1,34 @@
-<!-- AI-CONTEXT: .ai/rules.md -->
-## Created with Capacitor Create App
+# PXFM
 
-This app was created using [`@capacitor/create-app`](https://github.com/ionic-team/create-capacitor-app),
-and comes with a very minimal shell for building an app.
+A minimal internet radio player built with React, TypeScript, and Tauri.
 
-### Running this example
+## Tech Stack
 
-To run the provided example, you can use `npm start` command.
+- **Frontend:** React, TypeScript, Vite, Sass
+- **Backend/Shell:** Tauri (Rust)
+- **State Management:** React Context + Hooks
+- **Icons:** Lucide React
+- **Animations:** Framer Motion
+
+## Getting Started
+
+This project uses `pnpm`.
+
+### Development
 
 ```bash
-npm start
+pnpm install
+pnpm tauri dev
 ```
+
+### Build
+
+```bash
+pnpm tauri build
+```
+
+## Project Structure
+
+- `src-tauri/`: Tauri (Rust) backend code
+- `src/`: React frontend code (components, hooks, context)
+- `api/`: API integration (Radio Browser)

@@ -316,7 +316,7 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
           audio.play().catch((e) => console.error("Play failed:", e));
         });
 
-        hls.on(Hls.Events.ERROR, (event, data) => {
+        hls.on(Hls.Events.ERROR, (_event, data) => {
           if (data.fatal) {
             console.error("HLS Fatal Error:", data);
             if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {

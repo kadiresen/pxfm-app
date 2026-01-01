@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { RadioBrowserApi } from "../api/radio-browser";
 import { Station } from "../components/StationList/StationList";
 

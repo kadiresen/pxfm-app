@@ -30,9 +30,7 @@
     }
     z-index: 2; /* Bring above grid */
   }
-  /* Optional: slight gradient on text if desired, or plain white as requested */
 
-  /* Player row class removed as we reverted to direct flex children */
 
   .player-bg-glow {
     position: absolute;
