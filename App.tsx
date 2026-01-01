@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { SplashScreen } from "@capacitor/splash-screen";
-import { StatusBar, Style } from "@capacitor/status-bar";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import PlayerView from "./components/Player/PlayerView";
 import StationList, { Station } from "./components/StationList/StationList";
+import TitleBar from "./components/TitleBar/TitleBar";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { useRadioBrowser } from "./hooks/useRadioBrowser";
 import { useFavorites } from "./hooks/useFavorites";
@@ -28,20 +27,6 @@ const variants: Variants = {
 };
 
 const App: React.FC = () => {
-  // Hide splash screen on mount
-  useEffect(() => {
-    const initApp = async () => {
-      try {
-        await StatusBar.setStyle({ style: Style.Dark });
-        await StatusBar.setBackgroundColor({ color: "#0a0a0a" });
-        await SplashScreen.hide();
-      } catch (err) {
-        console.error("Failed to initialize app", err);
-      }
-    };
-    initApp();
-  }, []);
-
   const { stations, loading, error, search, initialized } = useRadioBrowser();
   const { favoriteStations } = useFavorites();
 
@@ -199,6 +184,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      <TitleBar />
       <PlayerView
         station={activeStation}
         isPlaying={isPlaying}
@@ -289,6 +275,7 @@ const App: React.FC = () => {
               initialized={displayMode === "favorites" ? true : initialized}
               onSelectStation={handleSelectStation}
               search={handleSearch}
+              currentSearchTerm={currentSearchTerm}
             />
           </motion.div>
         </AnimatePresence>

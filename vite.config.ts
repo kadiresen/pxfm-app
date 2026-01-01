@@ -9,11 +9,16 @@ export default defineConfig({
     minify: false,
     emptyOutDir: true,
   },
+  clearScreen: false,
   server: {
+    host: "0.0.0.0",
+    port: 5173,
+    strictPort: true,
     watch: {
-      ignored: ["**/android/**", "**/ios/**"],
+      ignored: ["**/src-tauri/**"],
     },
   },
+  envPrefix: ["VITE_", "TAURI_"],
   css: {
     preprocessorOptions: {
       scss: {

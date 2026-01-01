@@ -1,4 +1,3 @@
-import { CapacitorHttp } from "@capacitor/core";
 import { Station } from "../components/StationList/StationList";
 
 // List of potentially reliable base servers
@@ -28,11 +27,9 @@ const getBaseUrl = async (): Promise<string> => {
     for (const server of shuffled) {
       try {
         // Parallel requests would spam this, but the promise lock prevents it
-        const response = await CapacitorHttp.get({
-          url: `${server}/json/stats`,
-        });
+        const response = await fetch(`${server}/json/stats`);
 
-        if (response.status === 200) {
+        if (response.ok) {
           activeBaseUrl = server;
           console.log(`Connected to Radio Browser server: ${server}`);
           return server;
@@ -72,18 +69,16 @@ export const RadioBrowserApi = {
   async getTopStations(limit = 20): Promise<Station[]> {
     try {
       const baseUrl = await getBaseUrl();
-      const response = await CapacitorHttp.get({
-        url: `${baseUrl}/json/stations/topvote/${limit}`,
-      });
+      const response = await fetch(`${baseUrl}/json/stations/topvote/${limit}`);
 
-      if (response.status !== 200)
+      if (!response.ok)
         throw new Error("Failed to fetch top stations");
 
-      const data: RadioBrowserStation[] = response.data;
+      const data: RadioBrowserStation[] = await response.json();
       return data.map(mapToStation);
     } catch (error) {
       console.error("Radio Browser API Error:", error);
-      // Reset active url on failure to trigger re-discovery next time
+      // Reset active activeBaseUrl on failure to trigger re-discovery next time
       activeBaseUrl = null;
       return [];
     }
@@ -93,18 +88,16 @@ export const RadioBrowserApi = {
     if (!query || query.length < 3) return [];
     try {
       const baseUrl = await getBaseUrl();
-      const response = await CapacitorHttp.get({
-        url: `${baseUrl}/json/stations/search`,
-        params: {
-          name: query,
-          limit: limit.toString(),
-          hidebroken: "true",
-        },
+      const params = new URLSearchParams({
+        name: query,
+        limit: limit.toString(),
+        hidebroken: "true",
       });
+      const response = await fetch(`${baseUrl}/json/stations/search?${params.toString()}`);
 
-      if (response.status !== 200) throw new Error("Failed to search stations");
+      if (!response.ok) throw new Error("Failed to search stations");
 
-      const data: RadioBrowserStation[] = response.data;
+      const data: RadioBrowserStation[] = await response.json();
       return data.map(mapToStation);
     } catch (error) {
       console.error("Radio Browser API Search Error:", error);
@@ -120,20 +113,18 @@ export const RadioBrowserApi = {
       const baseUrl = await getBaseUrl();
       // Use 'search' endpoint with countrycode filter for more flexibility
       // order=clicktrend ensures we get the most popular ones
-      const response = await CapacitorHttp.get({
-        url: `${baseUrl}/json/stations/search`,
-        params: {
-          countrycode: countryCode,
-          limit: limit.toString(),
-          order: "clicktrend",
-          hidebroken: "true",
-        },
+      const params = new URLSearchParams({
+        countrycode: countryCode,
+        limit: limit.toString(),
+        order: "clicktrend",
+        hidebroken: "true",
       });
+      const response = await fetch(`${baseUrl}/json/stations/search?${params.toString()}`);
 
-      if (response.status !== 200)
+      if (!response.ok)
         throw new Error("Failed to fetch country stations");
 
-      const data: RadioBrowserStation[] = response.data;
+      const data: RadioBrowserStation[] = await response.json();
       return data.map(mapToStation);
     } catch (error) {
       console.error("Radio Browser API Country Error:", error);

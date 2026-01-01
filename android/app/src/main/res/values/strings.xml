@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">pxfm</string>
-    <string name="title_activity_main">pxfm</string>
-    <string name="package_name">com.pxfm.app</string>
-    <string name="custom_url_scheme">com.pxfm.app</string>
-</resources>

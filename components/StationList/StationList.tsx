@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2, Heart } from "lucide-react";
+import { Search, Loader2, Heart, X } from "lucide-react";
 import "./StationList.scss";
 import { useFavorites } from "../../hooks/useFavorites";
 
@@ -20,6 +20,7 @@ interface Props {
   initialized: boolean;
   onSelectStation: (station: Station) => void;
   search: (query: string) => void;
+  currentSearchTerm: string;
 }
 
 const StationList: React.FC<Props> = ({
@@ -30,17 +31,37 @@ const StationList: React.FC<Props> = ({
   initialized,
   onSelectStation,
   search,
+  currentSearchTerm,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(currentSearchTerm);
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+  const debounceTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce search
+  // Sync local state if parent updates prop
   useEffect(() => {
-    const timer = setTimeout(() => {
-      search(searchTerm);
+    setSearchTerm(currentSearchTerm);
+  }, [currentSearchTerm]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(() => {
+      search(value);
     }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm, search]);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    search("");
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+  };
 
   const handleToggleFavorite = (event: React.MouseEvent, station: Station) => {
     event.stopPropagation(); // Prevent onSelectStation from being called
@@ -60,8 +81,13 @@ const StationList: React.FC<Props> = ({
             type="text"
             placeholder="Search stations..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
           />
+          {searchTerm && (
+            <button className="clear-search-btn" onClick={handleClearSearch}>
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 

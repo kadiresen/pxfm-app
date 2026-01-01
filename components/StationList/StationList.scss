@@ -1,7 +1,7 @@
 .station-list-embedded {
     flex: 1;
     background: var(--color-bg-base);
-    overflow-y: auto;
+    overflow-y: scroll;
     padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -46,6 +46,24 @@
 
             &::placeholder {
                 color: var(--color-text-muted);
+            }
+        }
+
+        .clear-search-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background: none;
+            color: var(--color-text-muted);
+            margin-left: 4px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            padding: 0;
+
+            &:hover {
+                color: var(--color-text-primary);
             }
         }
     }
