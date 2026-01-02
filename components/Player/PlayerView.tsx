@@ -40,6 +40,15 @@ const PlayerView: React.FC<Props> = ({
             <div
               className={["status-indicator", indicatorState].filter(Boolean).join(" ")}
             >
+              <svg
+                className="status-bg-svg"
+                viewBox="0 0 50 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <rect className="status-shape status-shape-bar" x="0" y="6" width="50" height="4" rx="8" />
+                <rect className="status-shape status-shape-live" x="0" y="0" width="50" height="16" rx="8" />
+              </svg>
               <span className="status-bar" aria-hidden="true"></span>
               <span className="status-text">LIVE</span>
             </div>

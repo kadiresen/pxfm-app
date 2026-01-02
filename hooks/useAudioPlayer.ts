@@ -40,6 +40,9 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
     null
   );
   const playingRef = useRef(false);
+  const retryRef = useRef(false); // Track if we've attempted the shoutcast hack
+  const lastProgressAtRef = useRef(0);
+  const lastTimeRef = useRef(0);
   const { onNextStation, onPreviousStation } = controls ?? {};
 
   useEffect(() => {
@@ -51,9 +54,61 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
       setState((s) => ({ ...s, isPlaying: true, isLoading: false }));
     const onPause = () =>
       setState((s) => ({ ...s, isPlaying: false, isLoading: false }));
-    const onWaiting = () => setState((s) => ({ ...s, isLoading: true }));
+    const onWaiting = () => {
+      const audioEl = audioRef.current;
+      if (audioEl && !audioEl.paused) {
+        const now = performance.now();
+        if (now - lastProgressAtRef.current < 1200) {
+          return;
+        }
+      }
+      setState((s) => ({ ...s, isLoading: true }));
+    };
+    const onTimeUpdate = () => {
+      const audioEl = audioRef.current;
+      if (!audioEl) return;
+      if (audioEl.currentTime > lastTimeRef.current + 0.01) {
+        lastTimeRef.current = audioEl.currentTime;
+        lastProgressAtRef.current = performance.now();
+        setState((s) => ({
+          ...s,
+          isPlaying: !audioEl.paused,
+          isLoading: false,
+        }));
+      }
+    };
+    const onCanPlay = () =>
+      setState((s) => ({ ...s, isLoading: false }));
+    
     const onError = (e: Event) => {
       console.error("Audio error:", e);
+
+      // Smart Retry Logic for Shoutcast/Icecast
+      // If native playback fails on a clean URL, try appending ';' (Shoutcast hack)
+      if (
+        !hlsRef.current && // Only for native playback
+        !retryRef.current && // Only retry once per play session
+        audioRef.current &&
+        audioRef.current.src
+      ) {
+        const currentSrc = audioRef.current.src;
+        // If the URL does NOT end with ';', try adding it.
+        // (Browser normalizes src, so check carefully)
+        if (!currentSrc.endsWith(";")) {
+          console.log("Retrying with Shoutcast hack (;)...");
+          retryRef.current = true;
+          // Append ';' (handling potential trailing slash)
+          const retryUrl = currentSrc.endsWith("/")
+            ? `${currentSrc};`
+            : `${currentSrc}/;`;
+
+          audioRef.current.src = retryUrl;
+          audioRef.current.load();
+          audioRef.current.play().catch(console.error);
+          return; // Prevent setting error state immediately
+        }
+      }
+
       setState((s) => ({
         ...s,
         error: "Playback error",
@@ -66,6 +121,9 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
     audio.addEventListener("playing", onPlay);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("canplay", onCanPlay);
+    audio.addEventListener("canplaythrough", onCanPlay);
     audio.addEventListener("error", onError);
 
     return () => {
@@ -73,6 +131,9 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
       audio.removeEventListener("playing", onPlay);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("canplay", onCanPlay);
+      audio.removeEventListener("canplaythrough", onCanPlay);
       audio.removeEventListener("error", onError);
 
       if (hlsRef.current) {
@@ -155,6 +216,11 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
     ) => {
       if (!audioRef.current || !url) return;
 
+      // Sanitize URL: Start with a "clean" URL (no trailing ';')
+      // This fixes stations like radyo45lik that fail with the hack.
+      // We will fallback to adding ';' in onError if this fails.
+      const cleanUrl = url.endsWith(";") ? url.slice(0, -1) : url;
+
       const storedMetadata = metadata ?? metadataRef.current;
       if (storedMetadata) {
         metadataRef.current = storedMetadata;
@@ -169,27 +235,11 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
             console.warn("MusicControls creation failed", e);
           };
 
-          // Capacitor stores assets in 'public' folder inside 'assets'
-          // Plugin typically looks for 'www' or root.
-          // Try relative path 'public/assets/imgs/logo.png' if plugin prepends nothing
-          // Or just 'assets/imgs/logo.png' if served via http.
-          // But specific error was "www//assets/...".
-          // If we pass 'public/assets/...' it might become 'www/public/assets/...'.
-          // Let's try 'public/assets/imgs/logo.png' first as safe bet for Capacitor 'public' folder structure
-          // BUT wait, looking at the log: java.io.FileNotFoundException: www//assets/imgs/logo.png
-          // It seems the plugin PREPENDS "www/".
-          // In Capacitor, the web assets are in "public/".
-          // So we simply cannot point to it if the plugin hardcodes "www/".
-          // We need to check if the plugin allows "file://" or another prefix?
-          // Or we use a patch to fix the "www/" hardcoding in Java.
-          // Actually, let's look at the Java code I read earlier.
-          // It had "www". I should patch it to "public" for Capacitor!
-
           controls.create(
             {
               track: storedMetadata.title,
               artist: storedMetadata.artist,
-              cover: storedMetadata.artwork || "assets/imgs/logo.png", // Try without slash, relying on patch I will make
+              cover: storedMetadata.artwork || "assets/imgs/logo.png",
               isPlaying: state.isPlaying,
               dismissable: false,
               hasPrev: Boolean(onPreviousStation),
@@ -294,6 +344,7 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
       }
 
       setState((s) => ({ ...s, isLoading: true, error: null }));
+      retryRef.current = false; // Reset retry state for new track
       const audio = audioRef.current;
 
       // Cleanup previous HLS instance if exists
@@ -303,13 +354,13 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
       }
 
       // Logic to determine if we need HLS.js
-      const isHls = url.includes(".m3u8") || url.includes("/hls/");
+      const isHls = cleanUrl.includes(".m3u8") || cleanUrl.includes("/hls/");
 
       if (isHls && Hls.isSupported()) {
-        console.log("Using HLS.js for:", url);
+        console.log("Using HLS.js for:", cleanUrl);
         const hls = new Hls();
         hlsRef.current = hls;
-        hls.loadSource(url);
+        hls.loadSource(cleanUrl);
         hls.attachMedia(audio);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -323,14 +374,12 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
               console.log(
                 "HLS Network Error (CORS?), falling back to native audio..."
               );
-              // Hls.js failed (likely CORS or strict browser policies).
-              // Fallback to setting audio.src directly allows Android/iOS native player to take over.
-              // This works like VLC: it bypasses browser CORS and can play the audio track of video streams.
+              // Hls.js failed. Fallback to native audio.
               hls.destroy();
               hlsRef.current = null;
 
               if (audioRef.current) {
-                audioRef.current.src = url;
+                audioRef.current.src = cleanUrl;
                 audioRef.current.load();
                 audioRef.current.play().catch((e) => {
                   console.error("Native fallback failed:", e);
@@ -355,23 +404,9 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
         });
       } else if (audio.canPlayType("application/vnd.apple.mpegurl") || !isHls) {
         // Native HLS support (Safari) or standard audio
-        console.log("Using Native/Standard Audio for:", url);
+        console.log("Using Native/Standard Audio for:", cleanUrl);
 
-        // Shoutcast/Icecast compatibility:
-        // Only append ';' if the URL is the root (no path), because that's where the HTML Status Page usually lives.
-        // If there is a deep path (e.g. /stream, /mountpoint, /file.mp3), it's a direct resource that shouldn't be modified.
-        let finalUrl = url;
-        try {
-          const urlObj = new URL(url);
-          // If pathname is just "/" (or empty), it's a root URL like http://host:port/ -> Needs fix
-          if (urlObj.pathname === "/" || urlObj.pathname === "") {
-            finalUrl = url.endsWith("/") ? `${url};` : `${url}/;`;
-          }
-        } catch (e) {
-          // Fallback for invalid URLs: leave as is
-        }
-
-        audio.src = finalUrl;
+        audio.src = cleanUrl;
         audio.load();
         audio.play().catch((e) => console.error("Play failed:", e));
       } else {
