@@ -66,6 +66,17 @@ const mapToStation = (rbStation: RadioBrowserStation): Station => ({
 });
 
 export const RadioBrowserApi = {
+  async registerStationClick(stationId: string): Promise<void> {
+    if (!stationId) return;
+    try {
+      const baseUrl = await getBaseUrl();
+      // This endpoint increments the click counter for popularity lists.
+      await fetch(`${baseUrl}/json/url/${stationId}`, { cache: "no-store" });
+    } catch (error) {
+      console.warn("Radio Browser click tracking failed:", error);
+    }
+  },
+
   async getTopStations(limit = 20): Promise<Station[]> {
     try {
       const baseUrl = await getBaseUrl();

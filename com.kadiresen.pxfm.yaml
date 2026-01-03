@@ -13,8 +13,6 @@ finish-args:
   - --socket=x11
   - --share=ipc
   - --device=dri
-  - --own-name=org.mpris.MediaPlayer2.pxfm
-  - --talk-name=org.mpris.MediaPlayer2.*
 modules:
   - name: pxfm
     buildsystem: simple
@@ -38,4 +36,4 @@ modules:
     sources:
       - type: git
         url: https://github.com/kadiresen/pxfm-app
-        tag: v1.3.1
+        tag: v1.3.2
