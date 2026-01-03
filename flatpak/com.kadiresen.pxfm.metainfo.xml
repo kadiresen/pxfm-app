@@ -9,7 +9,7 @@
   <launchable type="desktop-id">com.kadiresen.pxfm.desktop</launchable>
   <url type="homepage">https://github.com/kadiresen/pxfm-app</url>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>LicenseRef-proprietary</project_license>
+  <project_license>MIT</project_license>
   <releases>
     <release version="1.3.1" date="2026-01-03" />
   </releases>
