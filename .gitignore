@@ -5,6 +5,7 @@ node_modules/
 .DS_Store
 .sourcemaps
 dist/
+src-tauri/vendor/
 
 # Tauri
 src-tauri/target/

@@ -34,3 +34,6 @@ modules:
       - type: archive
         url: https://github.com/kadiresen/pxfm-app/releases/download/v1.3.3/pxfm-dist-1.3.3.tar.gz
         sha256: cb04d96bdd0d30404a96364cc39a56c60e6125da16ecc842291761080d45c584
+      - type: archive
+        url: https://github.com/kadiresen/pxfm-app/releases/download/v1.3.3/pxfm-vendor-1.3.3.tar.gz
+        sha256: 975d48f99cb978222652688ebaae13928d850184f25ebfade99bcc31327dd583
