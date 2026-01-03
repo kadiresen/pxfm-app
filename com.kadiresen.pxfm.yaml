@@ -4,7 +4,6 @@ runtime-version: "23.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
-  - org.freedesktop.Sdk.Extension.node18
 command: pxfm
 finish-args:
   - --share=network
@@ -17,17 +16,12 @@ modules:
   - name: pxfm
     buildsystem: simple
     build-options:
-      append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/node18/bin
+      append-path: /usr/lib/sdk/rust-stable/bin
       env:
         CARGO_HOME: /run/build/pxfm/cargo
         RUSTUP_HOME: /run/build/pxfm/rustup
-        npm_config_cache: /run/build/pxfm/npm-cache
     build-commands:
-      - corepack enable
-      - corepack prepare pnpm@9.12.3 --activate
-      - pnpm install --frozen-lockfile
-      - pnpm build
-      - pnpm tauri build --bundles none
+      - cargo build --release --manifest-path src-tauri/Cargo.toml
       - install -Dm755 src-tauri/target/release/pxfm /app/bin/pxfm
       - install -Dm644 flatpak/com.kadiresen.pxfm.desktop /app/share/applications/com.kadiresen.pxfm.desktop
       - install -Dm644 flatpak/com.kadiresen.pxfm.metainfo.xml /app/share/metainfo/com.kadiresen.pxfm.metainfo.xml
@@ -37,3 +31,6 @@ modules:
       - type: git
         url: https://github.com/kadiresen/pxfm-app
         tag: v1.3.3
+      - type: archive
+        url: https://github.com/kadiresen/pxfm-app/releases/download/v1.3.3/pxfm-dist-1.3.3.tar.gz
+        sha256: cb04d96bdd0d30404a96364cc39a56c60e6125da16ecc842291761080d45c584
