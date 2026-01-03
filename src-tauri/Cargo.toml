@@ -1,6 +1,6 @@
 [package]
 name = "pxfm"
-version = "1.3.2"
+version = "1.3.3"
 description = "Minimalist Internet Radio Player"
 authors = ["Kadir"]
 license = ""
@@ -24,3 +24,4 @@ log = "0.4"
 tauri = { version = "2.9.5", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-os = "2.3.2"
+tauri-plugin-store = "2"

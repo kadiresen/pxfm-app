@@ -2,6 +2,7 @@
 pub fn run() {
   let builder = tauri::Builder::default()
     .plugin(tauri_plugin_os::init())
+    .plugin(tauri_plugin_store::Builder::default().build())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
