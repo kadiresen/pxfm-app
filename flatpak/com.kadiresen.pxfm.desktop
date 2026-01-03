@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=PXFM
+Comment=Minimalist Internet Radio Player
+Exec=pxfm %u
+Icon=com.kadiresen.pxfm
+Categories=Audio;AudioVideo;Player;
+Terminal=false
+StartupWMClass=pxfm

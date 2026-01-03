@@ -1,0 +1,41 @@
+app-id: com.kadiresen.pxfm
+runtime: org.freedesktop.Platform
+runtime-version: "23.08"
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+  - org.freedesktop.Sdk.Extension.node18
+command: pxfm
+finish-args:
+  - --share=network
+  - --socket=pulseaudio
+  - --socket=wayland
+  - --socket=x11
+  - --share=ipc
+  - --device=dri
+  - --own-name=org.mpris.MediaPlayer2.pxfm
+  - --talk-name=org.mpris.MediaPlayer2.*
+modules:
+  - name: pxfm
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/node18/bin
+      env:
+        CARGO_HOME: /run/build/pxfm/cargo
+        RUSTUP_HOME: /run/build/pxfm/rustup
+        npm_config_cache: /run/build/pxfm/npm-cache
+    build-commands:
+      - corepack enable
+      - corepack prepare pnpm@9.12.3 --activate
+      - pnpm install --frozen-lockfile
+      - pnpm build
+      - pnpm tauri build --bundles none
+      - install -Dm755 src-tauri/target/release/pxfm /app/bin/pxfm
+      - install -Dm644 flatpak/com.kadiresen.pxfm.desktop /app/share/applications/com.kadiresen.pxfm.desktop
+      - install -Dm644 flatpak/com.kadiresen.pxfm.metainfo.xml /app/share/metainfo/com.kadiresen.pxfm.metainfo.xml
+      - install -Dm644 src-tauri/icons/128x128.png /app/share/icons/hicolor/128x128/apps/com.kadiresen.pxfm.png
+      - install -Dm644 src-tauri/icons/128x128@2x.png /app/share/icons/hicolor/256x256/apps/com.kadiresen.pxfm.png
+    sources:
+      - type: git
+        url: https://github.com/kadiresen/pxfm-app
+        tag: v1.3.1
