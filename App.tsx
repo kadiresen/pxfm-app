@@ -6,6 +6,7 @@ import TitleBar from "./components/TitleBar/TitleBar";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { useRadioBrowser } from "./hooks/useRadioBrowser";
 import { useFavorites } from "./hooks/useFavorites";
+import { RadioBrowserApi } from "./api/radio-browser";
 
 type DisplayMode = "all" | "favorites";
 
@@ -87,6 +88,7 @@ const App: React.FC = () => {
         stationQueueRef.current = options.queue ?? [];
       }
       setActiveStation(station);
+      RadioBrowserApi.registerStationClick(station.id);
       if (station.streamUrl) {
         play(station.streamUrl, {
           title: station.name,
