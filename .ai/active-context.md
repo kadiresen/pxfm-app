@@ -6,18 +6,14 @@
 > When starting a new session, **READ THIS FIRST** to understand where we left off.
 
 ## 🎯 Current Focus
-*What are we working on right now? (e.g., "Implementing the Auth system", "Refactoring the API")*
-
-- [ ] Task 1
-- [ ] Task 2
+- Fixing build errors related to missing vendored dependencies.
 
 ## 🔄 Recent Changes
-*Briefly list what was just completed.*
-- ...
+- Populated the `vendor` directory using `cargo vendor` to resolve the Cargo build error.
+- Verified that `.cargo/config.toml` correctly points to the newly created `vendor` directory.
 
 ## 🚧 Known Issues / Blockers
-- ...
+- None currently known.
 
 ## 🔜 Next Steps
-*What should happen immediately after the current task?*
-- ...
+- User to verify if `pnpm tauri:dev` runs successfully.
