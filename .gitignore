@@ -9,3 +9,9 @@ src-tauri/vendor/
 
 # Tauri
 src-tauri/target/
+src-tauri/gen/
+*.jks
+*.p12
+*.key
+*-key.json
+google-services.json
