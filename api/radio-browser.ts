@@ -80,7 +80,11 @@ export const RadioBrowserApi = {
   async getTopStations(limit = 20): Promise<Station[]> {
     try {
       const baseUrl = await getBaseUrl();
-      const response = await fetch(`${baseUrl}/json/stations/topvote/${limit}`);
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        hidebroken: "true",
+      });
+      const response = await fetch(`${baseUrl}/json/stations/topvote?${params.toString()}`);
 
       if (!response.ok)
         throw new Error("Failed to fetch top stations");

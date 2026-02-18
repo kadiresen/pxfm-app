@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Hls from "hls.js";
+import { invoke } from "@tauri-apps/api/core";
 
 interface AudioPlayerState {
   isPlaying: boolean;
@@ -12,15 +13,6 @@ interface AudioPlayerControls {
   onPreviousStation?: () => void;
 }
 
-declare global {
-  interface Window {
-    MusicControls?: any;
-  }
-}
-
-const getMusicControls = () =>
-  typeof window !== "undefined" ? window.MusicControls : undefined;
-
 export const useAudioPlayer = (controls?: AudioPlayerControls) => {
   const [state, setState] = useState<AudioPlayerState>({
     isPlaying: false,
@@ -28,401 +20,195 @@ export const useAudioPlayer = (controls?: AudioPlayerControls) => {
     error: null,
   });
 
-  // We keep track of the current audio element and hls instance
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const metadataRef = useRef<{
-    title: string;
-    artist: string;
-    artwork: string;
-  } | null>(null);
-  const musicControlsSubscription = useRef<{ unsubscribe?: () => void } | null>(
-    null
-  );
-  const playingRef = useRef(false);
-  const retryRef = useRef(false); // Track if we've attempted the shoutcast hack
-  const lastProgressAtRef = useRef(0);
-  const lastTimeRef = useRef(0);
+  const metadataRef = useRef<{ title: string; artist: string; artwork: string } | null>(null);
   const { onNextStation, onPreviousStation } = controls ?? {};
 
+  // Helper to sync with Android Native Media Session
+  const syncNativeMediaSession = useCallback(async (isPlaying: boolean) => {
+    try {
+      if (isPlaying && metadataRef.current) {
+        await invoke("play", {
+          title: metadataRef.current.title,
+          artist: metadataRef.current.artist,
+          artwork: metadataRef.current.artwork,
+        });
+      } else if (!isPlaying) {
+        await invoke("stop");
+      }
+    } catch (e) {
+      // Not on Android or permission missing, ignore
+      console.debug("Native media sync ignored:", e);
+    }
+  }, []);
+
+  const nextStationRef = useRef(onNextStation);
+  const prevStationRef = useRef(onPreviousStation);
+
   useEffect(() => {
-    // Initialize audio element on mount
+    nextStationRef.current = onNextStation;
+    prevStationRef.current = onPreviousStation;
+  }, [onNextStation, onPreviousStation]);
+
+  useEffect(() => {
     const audio = new Audio();
+    audio.preload = "auto";
     audioRef.current = audio;
 
-    const onPlay = () =>
+    const onPlay = () => {
       setState((s) => ({ ...s, isPlaying: true, isLoading: false }));
-    const onPause = () =>
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.playbackState = "playing";
+      }
+      syncNativeMediaSession(true);
+    };
+
+    const onPause = () => {
       setState((s) => ({ ...s, isPlaying: false, isLoading: false }));
-    const onWaiting = () => {
-      const audioEl = audioRef.current;
-      if (audioEl && !audioEl.paused) {
-        const now = performance.now();
-        if (now - lastProgressAtRef.current < 1200) {
-          return;
-        }
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.playbackState = "paused";
       }
-      setState((s) => ({ ...s, isLoading: true }));
+      syncNativeMediaSession(false);
     };
-    const onTimeUpdate = () => {
-      const audioEl = audioRef.current;
-      if (!audioEl) return;
-      if (audioEl.currentTime > lastTimeRef.current + 0.01) {
-        lastTimeRef.current = audioEl.currentTime;
-        lastProgressAtRef.current = performance.now();
-        setState((s) => ({
-          ...s,
-          isPlaying: !audioEl.paused,
-          isLoading: false,
-        }));
-      }
-    };
-    const onCanPlay = () =>
-      setState((s) => ({ ...s, isLoading: false }));
-    
-    const onError = (e: Event) => {
-      console.error("Audio error:", e);
 
-      // Smart Retry Logic for Shoutcast/Icecast
-      // If native playback fails on a clean URL, try appending ';' (Shoutcast hack)
-      if (
-        !hlsRef.current && // Only for native playback
-        !retryRef.current && // Only retry once per play session
-        audioRef.current &&
-        audioRef.current.src
-      ) {
-        const currentSrc = audioRef.current.src;
-        // If the URL does NOT end with ';', try adding it.
-        // (Browser normalizes src, so check carefully)
-        if (!currentSrc.endsWith(";")) {
-          console.log("Retrying with Shoutcast hack (;)...");
-          retryRef.current = true;
-          // Append ';' (handling potential trailing slash)
-          const retryUrl = currentSrc.endsWith("/")
-            ? `${currentSrc};`
-            : `${currentSrc}/;`;
-
-          audioRef.current.src = retryUrl;
-          audioRef.current.load();
-          audioRef.current.play().catch(console.error);
-          return; // Prevent setting error state immediately
-        }
-      }
-
+    const onWaiting = () => setState((s) => ({ ...s, isLoading: true }));
+    const onCanPlay = () => setState((s) => ({ ...s, isLoading: false }));
+    const onError = (e: any) => {
+      console.error("Audio Playback Error:", e);
       setState((s) => ({
         ...s,
-        error: "Playback error",
-        isLoading: false,
+        error: "Playback failed",
         isPlaying: false,
+        isLoading: false,
       }));
+      syncNativeMediaSession(false);
     };
 
     audio.addEventListener("play", onPlay);
     audio.addEventListener("playing", onPlay);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("waiting", onWaiting);
-    audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("canplay", onCanPlay);
-    audio.addEventListener("canplaythrough", onCanPlay);
     audio.addEventListener("error", onError);
+
+    // Setup Media Session Handlers
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("play", () => audio.play());
+      navigator.mediaSession.setActionHandler("pause", () => audio.pause());
+      navigator.mediaSession.setActionHandler("stop", () => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      navigator.mediaSession.setActionHandler("previoustrack", () => prevStationRef.current?.());
+      navigator.mediaSession.setActionHandler("nexttrack", () => nextStationRef.current?.());
+    }
 
     return () => {
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("playing", onPlay);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("waiting", onWaiting);
-      audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("canplay", onCanPlay);
-      audio.removeEventListener("canplaythrough", onCanPlay);
       audio.removeEventListener("error", onError);
 
       if (hlsRef.current) {
         hlsRef.current.destroy();
+        hlsRef.current = null;
       }
       audio.pause();
       audio.src = "";
+      syncNativeMediaSession(false);
+      audioRef.current = null;
     };
-  }, []);
-
-  useEffect(() => {
-    // Media Session Action Handlers
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.setActionHandler("play", () => {
-        audioRef.current?.play();
-      });
-      navigator.mediaSession.setActionHandler("pause", () => {
-        audioRef.current?.pause();
-      });
-      navigator.mediaSession.setActionHandler("stop", () => {
-        audioRef.current?.pause(); // No native stop, just pause
-      });
-    }
-    return () => {
-      if ("mediaSession" in navigator) {
-        navigator.mediaSession.setActionHandler("play", null);
-        navigator.mediaSession.setActionHandler("pause", null);
-        navigator.mediaSession.setActionHandler("stop", null);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.setActionHandler("previoustrack", () => {
-        onPreviousStation?.();
-      });
-      navigator.mediaSession.setActionHandler("nexttrack", () => {
-        onNextStation?.();
-      });
-    }
-    return () => {
-      if ("mediaSession" in navigator) {
-        navigator.mediaSession.setActionHandler("previoustrack", null);
-        navigator.mediaSession.setActionHandler("nexttrack", null);
-      }
-    };
-  }, [onNextStation, onPreviousStation]);
-
-  useEffect(() => {
-    // Sync playback state
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.playbackState = state.isPlaying
-        ? "playing"
-        : "paused";
-    }
-    const controls = getMusicControls();
-    if (controls) {
-      controls.updateIsPlaying(state.isPlaying);
-    }
-    playingRef.current = state.isPlaying;
-  }, [state.isPlaying]);
-
-  useEffect(() => {
-    const controls = getMusicControls();
-    return () => {
-      if (musicControlsSubscription.current) {
-        musicControlsSubscription.current.unsubscribe?.();
-      }
-      if (controls) {
-        controls.destroy();
-      }
-    };
-  }, []);
+  }, [syncNativeMediaSession]);
 
   const play = useCallback(
-    async (
-      url: string,
-      metadata?: { title: string; artist: string; artwork: string }
-    ) => {
+    async (url: string, metadata?: { title: string; artist: string; artwork: string }) => {
       if (!audioRef.current || !url) return;
 
-      // Sanitize URL: Start with a "clean" URL (no trailing ';')
-      // This fixes stations like radyo45lik that fail with the hack.
-      // We will fallback to adding ';' in onError if this fails.
-      const cleanUrl = url.endsWith(";") ? url.slice(0, -1) : url;
-
-      const storedMetadata = metadata ?? metadataRef.current;
-      if (storedMetadata) {
-        metadataRef.current = storedMetadata;
-        const controls = getMusicControls();
-        if (controls) {
-          controls.destroy();
-
-          const onSuccess = () => {
-            // controls created
-          };
-          const onError = (e: any) => {
-            console.warn("MusicControls creation failed", e);
-          };
-
-          controls.create(
-            {
-              track: storedMetadata.title,
-              artist: storedMetadata.artist,
-              cover: storedMetadata.artwork || "assets/imgs/logo.png",
-              isPlaying: state.isPlaying,
-              dismissable: false,
-              hasPrev: Boolean(onPreviousStation),
-              hasNext: Boolean(onNextStation),
-              hasClose: false,
-              ticker: storedMetadata.title,
-            },
-            onSuccess,
-            onError
-          );
-
-          controls.subscribe((action: any) => {
-            try {
-              const message = JSON.parse(action).message;
-              switch (message) {
-                case "music-controls-next":
-                case "music-controls-media-button-next":
-                  onNextStation?.();
-                  break;
-                case "music-controls-previous":
-                case "music-controls-media-button-previous":
-                  onPreviousStation?.();
-                  break;
-                case "music-controls-play":
-                case "music-controls-media-button-play":
-                  audioRef.current?.play();
-                  setState((s) => ({ ...s, isPlaying: true, isLoading: false }));
-                  break;
-                case "music-controls-pause":
-                case "music-controls-media-button-pause":
-                  audioRef.current?.pause();
-                  setState((s) => ({ ...s, isPlaying: false, isLoading: false }));
-                  break;
-                case "music-controls-toggle-play-pause":
-                case "music-controls-media-button-play-pause":
-                  if (playingRef.current) {
-                    audioRef.current?.pause();
-                    setState((s) => ({
-                      ...s,
-                      isPlaying: false,
-                      isLoading: false,
-                    }));
-                  } else {
-                    audioRef.current?.play();
-                    setState((s) => ({
-                      ...s,
-                      isPlaying: true,
-                      isLoading: false,
-                    }));
-                  }
-                  break;
-                default:
-                  break;
-              }
-            } catch (err) {
-              console.warn("MusicControls payload parse failed", err);
-            }
+      if (metadata) {
+        metadataRef.current = metadata;
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: metadata.title,
+            artist: metadata.artist,
+            artwork: [
+              { src: metadata.artwork, sizes: "512x512", type: "image/png" }
+            ],
           });
-
-          controls.listen();
         }
       }
 
-      // Update Media Session Metadata
-      if ("mediaSession" in navigator && metadata) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: metadata.title,
-          artist: metadata.artist,
-          artwork: [
-            {
-              src: metadata.artwork || "/assets/imgs/logo.png",
-              sizes: "96x96",
-              type: "image/png",
-            },
-            {
-              src: metadata.artwork || "/assets/imgs/logo.png",
-              sizes: "128x128",
-              type: "image/png",
-            },
-            {
-              src: metadata.artwork || "/assets/imgs/logo.png",
-              sizes: "192x192",
-              type: "image/png",
-            },
-            {
-              src: metadata.artwork || "/assets/imgs/logo.png",
-              sizes: "256x256",
-              type: "image/png",
-            },
-            {
-              src: metadata.artwork || "/assets/imgs/logo.png",
-              sizes: "384x384",
-              type: "image/png",
-            },
-            {
-              src: metadata.artwork || "/assets/imgs/logo.png",
-              sizes: "512x512",
-              type: "image/png",
-            },
-          ],
-        });
-      }
-
       setState((s) => ({ ...s, isLoading: true, error: null }));
-      retryRef.current = false; // Reset retry state for new track
-      const audio = audioRef.current;
 
-      // Cleanup previous HLS instance if exists
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
 
-      // Logic to determine if we need HLS.js
-      const isHls = cleanUrl.includes(".m3u8") || cleanUrl.includes("/hls/");
+      let streamUrl = url.trim();
+
+      // Force HTTPS for better compatibility with modern browser security
+      if (streamUrl.startsWith("http://")) {
+        streamUrl = streamUrl.replace("http://", "https://");
+      }
+
+      // Shoutcast/Icecast Suffix Trick:
+      // Naked URLs often serve an HTML status page. Appending '/;' or '/stream' 
+      // forces the server to return the raw audio binary that regulators expect.
+      try {
+        const u = new URL(streamUrl);
+        if (u.pathname === "/" || u.pathname === "") {
+          streamUrl = streamUrl.endsWith("/") ? streamUrl + ";" : streamUrl + "/;";
+        }
+      } catch (e) {
+        // Fallback for invalid URLs
+      }
+
+      console.log("Playing station URL:", streamUrl);
+      const player = audioRef.current;
+      player.crossOrigin = "anonymous";
+
+      const lowerUrl = streamUrl.toLowerCase();
+      const isHls = lowerUrl.includes(".m3u8") ||
+        lowerUrl.includes("/hls/") ||
+        lowerUrl.includes("playlist") ||
+        lowerUrl.includes(".m3u") ||
+        lowerUrl.includes(".pls");
 
       if (isHls && Hls.isSupported()) {
-        console.log("Using HLS.js for:", cleanUrl);
-        const hls = new Hls();
-        hlsRef.current = hls;
-        hls.loadSource(cleanUrl);
-        hls.attachMedia(audio);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          audio.play().catch((e) => console.error("Play failed:", e));
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
         });
-
-        hls.on(Hls.Events.ERROR, (_event, data) => {
+        hlsRef.current = hls;
+        hls.loadSource(streamUrl);
+        hls.attachMedia(player);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => player.play());
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          console.error("HLS Error:", data);
           if (data.fatal) {
-            console.error("HLS Fatal Error:", data);
             if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-              console.log(
-                "HLS Network Error (CORS?), falling back to native audio..."
-              );
-              // Hls.js failed. Fallback to native audio.
-              hls.destroy();
-              hlsRef.current = null;
-
-              if (audioRef.current) {
-                audioRef.current.src = cleanUrl;
-                audioRef.current.load();
-                audioRef.current.play().catch((e) => {
-                  console.error("Native fallback failed:", e);
-                  setState((s) => ({
-                    ...s,
-                    error: "Stream unavailable",
-                    isLoading: false,
-                  }));
-                });
-              }
+              hls.startLoad();
             } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
               hls.recoverMediaError();
             } else {
               hls.destroy();
-              setState((s) => ({
-                ...s,
-                error: "Stream error",
-                isLoading: false,
-              }));
+              setState((s) => ({ ...s, error: "Stream error", isLoading: false }));
             }
           }
         });
-      } else if (audio.canPlayType("application/vnd.apple.mpegurl") || !isHls) {
-        // Native HLS support (Safari) or standard audio
-        console.log("Using Native/Standard Audio for:", cleanUrl);
-
-        audio.src = cleanUrl;
-        audio.load();
-        audio.play().catch((e) => console.error("Play failed:", e));
       } else {
-        setState((s) => ({
-          ...s,
-          error: "Format not supported",
-          isLoading: false,
-        }));
+        player.src = streamUrl;
+        player.load();
+        player.play().catch(console.error);
       }
     },
-    [onNextStation, onPreviousStation, state.isPlaying]
+    []
   );
 
-  const pause = useCallback(() => {
-    audioRef.current?.pause();
-  }, []);
+  const pause = useCallback(() => audioRef.current?.pause(), []);
 
   const toggle = useCallback(() => {
     if (state.isPlaying) {

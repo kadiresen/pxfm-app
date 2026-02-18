@@ -1,6 +1,12 @@
+#[tauri::command]
+fn play() {}
+
+#[tauri::command]
+fn stop() {}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  let builder = tauri::Builder::default()
+  tauri::Builder::default()
     .plugin(tauri_plugin_os::init())
     .plugin(tauri_plugin_store::Builder::default().build())
     .setup(|app| {
@@ -12,8 +18,8 @@ pub fn run() {
         )?;
       }
       Ok(())
-    });
-
-  builder.run(tauri::generate_context!())
+    })
+    .invoke_handler(tauri::generate_handler![play, stop])
+    .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

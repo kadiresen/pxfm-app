@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-play"
+description = "Allows the play command of the media plugin"
+commands.allow = ["play"]
+
+[[permission]]
+identifier = "allow-stop"
+description = "Allows the stop command of the media plugin"
+commands.allow = ["stop"]

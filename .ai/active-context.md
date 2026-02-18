@@ -16,6 +16,10 @@
 - Updated app icons for Android using the project logo.
 - Configured a minimalist dark splash screen for Android.
 - Forced light status bar icons for better visibility on dark backgrounds.
+- Implemented a robust Android Foreground Service for flawless background media playback.
+- Created a native Tauri MediaPlugin to sync metadata and playback state with the Android OS.
+- Completely refactored `useAudioPlayer` hook for better stability and MediaSession integration.
+- Fixed widget play/pause synchronization issues on Android.
 
 ## 🚧 Known Issues / Blockers
 - None currently known.
